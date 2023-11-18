@@ -41,10 +41,10 @@ It's simple web application to store html contents and images to serve as a head
 
 ## App Secret
 ** Enable secret storage
- > dotnet user-secrets init -p src\Web.WebApp
+ > dotnet user-secrets init -p WebApp
 ** Set secret
  > dotnet user-secrets set 
  - MongoDb connection string: 
  - Blog storage connection string:
 ** List Secret
- > dotnet user-secrets list -p src\Web.WebApp
+ > dotnet user-secrets list -p WebApp

@@ -1,0 +1,50 @@
+# Summary
+This project demonstrates how to use .Net to access and manage data in Azure CosmosDB-Mongo Db and Azure Blog storage.
+It's simple web application to store html contents and images to serve as a head-less portfolio content managment system.
+
+# Defaul setting:
+- Username: admin
+- Password: admin
+
+# Api public client end-points: Get only endpoint without access security check
+- api/posts  list all posts
+- api/post/{id} get post by id
+- api/post/{slug} get post by slug (url)
+- api/pages list all pages
+- api/page/{id} get page by id
+- api/page/{slug} get page by slug name
+
+# Tech stack
+- .Net Blazor Server App
+- Azure CosmosDB and Blog storage
+
+
+# Project Structure: DDD
+## Core.Domain
+- Plain C# object domain entities
+
+## Core.Application
+
+## Core.Infrastructure
+- MongoDb
+- Azure Blob storage
+ - Package: Azure.Storage.Blobs
+- Other packages:
+	- Microsoft.AspNetCore.Mvc.NewtonsoftJson
+	- AutoMapper
+	- AutoMapper.Extensions.Microsoft.DependencyInjection
+
+## Web.App
+- Blazor Razor page web application
+## Web.Api
+
+
+## App Secret
+** Enable secret storage
+ > dotnet user-secrets init -p src\Web.WebApp
+** Set secret
+ > dotnet user-secrets set 
+ - MongoDb connection string: 
+ - Blog storage connection string:
+** List Secret
+ > dotnet user-secrets list -p src\Web.WebApp

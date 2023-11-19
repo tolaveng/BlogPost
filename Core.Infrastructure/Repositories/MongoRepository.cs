@@ -91,6 +91,16 @@ namespace Core.Infrastructure.Repositories
             await _collection.InsertOneAsync(document);
         }
 
+        public async Task<bool> PingAsync()
+        {
+            try {
+                var ping = _collection.Database.RunCommandAsync((Command<BsonDocument>)"{ping:1}").Wait(1000);
+                return ping;
+            } catch (Exception) {
+                return false;
+            }
+        }
+
         public async Task ReplaceOneAsync(TDocument document)
         {
             var filter = Builders<TDocument>.Filter.Eq(doc => doc.Id, document.Id);

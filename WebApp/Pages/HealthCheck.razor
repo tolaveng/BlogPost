@@ -1,0 +1,41 @@
+﻿@page "/healthcheck"
+@using Core.Application.Services.Interfaces
+@layout BlankLayout
+
+
+<h3>Health Check</h3>
+
+<div class="container">
+@if (isLoading)
+{
+    <span>Loading...</span>
+    return;
+}
+
+<ul>
+    <li>Can connect to Mongo : @canConnectToMongo</li>
+    <li>Can connect to Azure Storage : @canConnectToAzureStorage</li>
+</ul>
+
+</div>
+
+
+@code {
+    [Inject]
+    private IHealthCheckService healthCheckService { get; set; }
+
+    bool isLoading = true;
+    string canConnectToMongo = "NO";
+    string canConnectToAzureStorage = "NO";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (await healthCheckService.CanConnectToMongoDb())
+        {
+            canConnectToMongo = "YES";
+
+        }
+        isLoading = false;
+    }
+
+}

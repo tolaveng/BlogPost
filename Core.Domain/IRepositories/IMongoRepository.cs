@@ -8,6 +8,7 @@ namespace Core.Domain.IRepositories
 {
     public interface IMongoRepository<TDocument> where TDocument : IDocument
     {
+        Task<bool> PingAsync();
         IQueryable<TDocument> AsQueryable();
 
         IEnumerable<TDocument> FilterBy(Expression<Func<TDocument, bool>> filterExpression);

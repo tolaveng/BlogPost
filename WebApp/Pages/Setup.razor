@@ -1,0 +1,207 @@
+﻿@page "/setup"
+@attribute [AllowAnonymous]
+@layout BlankLayout
+@using System.ComponentModel.DataAnnotations
+@using Core.Application.Constances
+@using Core.Application.DTOs
+
+
+@if (isLoading)
+{
+    <div class="d-flex align-items-center justify-content-center" style="min-height: 320px;">
+        <Spinner/>
+    </div>
+    return;
+}
+
+@if (isSetup)
+{
+    <div class="text-danger mt-5">
+        The system has been set up already. Cannot run setup again.
+    </div>
+    return;
+}
+
+@if (isSetupSuccess)
+{
+    <div class="text-success">
+        The system has been set up successfully. <a href="/">Go to home page</a>
+    </div>
+    return;
+}
+
+
+<div class="row pt-4">
+    <div class="col-sm-12 col-md-8">
+        <EditForm Model="@setupModel" OnValidSubmit="@onSubmitHandler">
+            <DataAnnotationsValidator/>
+            <fieldset class="border p-4">
+                <legend class="float-none w-auto p-2">Site Setting:</legend>
+                <div class="mb-3">
+                    <label for="siteTitle">Title</label>
+                    <InputText id="siteTitle" @bind-Value="@setupModel.Title" class="form-control" />
+                    <ValidationMessage For="@(() => setupModel.Title)" />
+                </div>
+
+                <div class="mb-3">
+                    <label for="siteKeyword">Keywords</label>
+                    <InputText id="siteKeyword" @bind-Value="@setupModel.Keywords" class="form-control" />
+                    <ValidationMessage For="@(() => setupModel.Keywords)" />
+                </div>
+            </fieldset>
+            
+             <fieldset class="border p-4">
+                <legend class="float-none w-auto p-2">Administrator User:</legend>
+                <div class="mb-3">
+                    <label for="email">Admin's Email</label>
+                    <InputText id="email" @bind-Value="@setupModel.Email" class="form-control" />
+                    <ValidationMessage For="@(() => setupModel.Email)" />
+                </div>
+
+                <div class="mb-3">
+                    <label for="username">Admin's Username</label>
+                    <InputText id="userName" @bind-Value="@setupModel.Username" class="form-control" />
+                    <ValidationMessage For="@(() => setupModel.Username)" />
+                </div>
+
+                <div class="mb-3">
+                    <label for="password">Password</label>
+                    <div class="input-group">
+                        <InputText type="@(showPassword ? "text" : "password")" id="password" @bind-Value="@setupModel.Password" class="form-control" />
+                        <button class="btn btn-outline-secondary" type="button" @onclick=showHidePassword><span class="oi oi-eye" title="icon name" aria-hidden="true" /></button>
+                    </div>
+                    <ValidationMessage For="@(() => setupModel.Password)" />
+                </div>
+
+                <div class="mb-3">
+                    <label for="cPassword">Confirm Password</label>
+                    <div class="input-group">
+                        <InputText type="@(showPassword ? "text" : "password")" id="cPassword" @bind-Value="@setupModel.ConfirmPassword" class="form-control" />
+                        <button class="btn btn-outline-secondary" type="button" @onclick=showHidePassword><span class="oi oi-eye" title="icon name" aria-hidden="true" /></button>
+                    </div>
+                    <ValidationMessage For="@(() => setupModel.ConfirmPassword)" />
+                </div>
+             </fieldset>
+             <ValidationSummary/>
+             <div class="mt-5">
+                @if (!string.IsNullOrWhiteSpace(errorMessage))
+                {
+                    <div class="text-danger">@errorMessage</div>
+                }
+                @if (isSubmitting)
+                {
+                    <div>Setting up project...</div>
+                }
+            </div>
+             <button type="submit" class="btn btn-primary mb-3 mt-3" disabled="@(isSubmitting || !string.IsNullOrWhiteSpace(errorMessage))">Run Setup</button>
+        </EditForm>
+    </div>
+</div>
+
+
+@code {
+    [Inject]
+    ISettingService settingService { get; set; }
+
+    [Inject]
+    IUserService userService { get; set; }
+
+    bool isLoading = true;
+    bool isSetup = false;
+    bool isSetupSuccess = false;
+    bool showPassword = false;
+    bool isSubmitting = false;
+    string errorMessage = "";
+
+    SetupModel setupModel = new SetupModel();
+
+    protected void showHidePassword()
+    {
+        showPassword = !showPassword;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        isLoading = true;
+        try
+        {
+            var countUsers = await userService.CountUsersAsync();
+            if (countUsers > 0)
+            {
+                isSetup = true;
+            }
+        } catch (Exception ex)
+        {
+            errorMessage = "Unexpected error occurs. Please try again later";
+        }
+        isLoading = false;
+    }
+
+
+    private async Task onSubmitHandler()
+    {
+        isSubmitting = true;
+        var countUsers = await userService.CountUsersAsync();
+        if (countUsers > 0)
+        {
+            errorMessage = "The system has been already set up. Cannot setup again.";
+            isSubmitting = false;
+            return;
+        }
+        var user = setupModel.ToUserDto();
+        var created = await userService.CreateUserAsyc(user);
+
+        if (!created)
+        {
+            errorMessage = "Unexpected error occurs. Please try again later";
+            isSubmitting = false;
+            return;
+        }
+
+        var title = new SettingDto(SettingNames.SiteTitle, setupModel.Title);
+        await settingService.CreateSettingAsync(title);
+
+        var keyword = new SettingDto(SettingNames.SiteKeywords, setupModel.Keywords);
+        await settingService.CreateSettingAsync(keyword);
+
+        isSubmitting = false;
+        isSetupSuccess = true;
+    }
+
+
+    protected class SetupModel {
+        [Required(ErrorMessage = "Title is required")]
+        public string Title { get; set; }
+
+        [Required(ErrorMessage = "Keywords is required")]
+        public string Keywords { get; set; }
+
+        [Required(ErrorMessage = "Email is required")]
+        [EmailAddress(ErrorMessage = "Invalid Email address")]
+        public string Email { get; set; }
+
+        [Required(ErrorMessage = "Username is required")]
+        [MinLength(4, ErrorMessage = "Username must be at least 4 characters")]
+        public string Username { get; set; }
+
+        [Required(ErrorMessage = "Password is required")]
+        [DataType(DataType.Password)]
+        [MinLength(4, ErrorMessage = "Password must be at least 4 characters")]
+        public string Password { get; set; }
+
+        [Required(ErrorMessage = "Confrim Password is required")]
+        [DataType(DataType.Password)]
+        [Compare("Password", ErrorMessage = "Confirm Password must match with Password")]
+        public string ConfirmPassword { get; set; }
+
+        public UserDto ToUserDto()
+        {
+            return new UserDto()
+                {
+                    Username = Username.Trim(),
+                    Email = Email.Trim(),
+                    Password = Password
+                };
+        }
+    }
+}

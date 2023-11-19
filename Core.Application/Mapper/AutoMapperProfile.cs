@@ -10,6 +10,8 @@ namespace Core.Application.Mapper
         {
             CreateMap<SettingDto, Setting>().ReverseMap();
             CreateMap<UserDto, User>();
+            CreateMap<User, UserDto>()
+                .ForMember(x => x.Password, x => x.MapFrom(z => ""));
         }
     }
 }

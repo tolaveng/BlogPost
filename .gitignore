@@ -187,3 +187,4 @@ UpgradeLog*.XML
 # Others
 TrackExpenseNote.txt
 Note.txt
+*/appsettings.Development.json

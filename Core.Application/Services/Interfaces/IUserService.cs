@@ -9,5 +9,7 @@ namespace Core.Application.Services.Interfaces
         Task<List<UserDto>> GetAllUsersAsync();
         Task<int> CountUsersAsync();
         Task<bool> CreateUserAsyc(UserDto user);
+
+        Task<UserDto> SignInAsync(string username, string password);
     }
 }

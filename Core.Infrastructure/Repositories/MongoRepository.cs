@@ -2,6 +2,7 @@
 using Core.Domain.Documents;
 using Core.Domain.IRepositories;
 using Core.Infrastructure.MongoDb;
+using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using System.Linq.Expressions;
@@ -11,9 +12,11 @@ namespace Core.Infrastructure.Repositories
     public class MongoRepository<TDocument> : IMongoRepository<TDocument> where TDocument : IDocument
     {
         private readonly IMongoCollection<TDocument> _collection;
+        private readonly ILogger<IMongoRepository<TDocument>> logger;
 
-        public MongoRepository(IMongoHelper mongoHelper)
+        public MongoRepository(IMongoHelper mongoHelper, ILogger<IMongoRepository<TDocument>> logger)
         {
+            this.logger = logger;
             var database = mongoHelper.Database;
             var collectionAtt = typeof(TDocument).GetCustomAttributes(typeof(MongoDbCollectionAttribute), false).FirstOrDefault() as MongoDbCollectionAttribute;
             if (collectionAtt == null)
@@ -22,20 +25,32 @@ namespace Core.Infrastructure.Repositories
             }
 
             _collection = database.GetCollection<TDocument>(collectionAtt.CollectionName);
-
-            var indexes = typeof(TDocument).GetCustomAttributes(typeof(MongoDbIndexesAttribute), false);
-            if (indexes != null && indexes.Any())
+            try
             {
-                foreach (var index in indexes)
+                var existingIndexes = _collection.Indexes.List().ToList();
+                // {"key":{ "IndexName" : 1 }}
+                var indexNames = existingIndexes.SelectMany(x => x.Elements).Where(x => x.Name == "key")
+                    .Select(x => x.Value.ToString());
+                var indexes = typeof(TDocument).GetCustomAttributes(typeof(MongoDbIndexesAttribute), false);
+                if (indexes != null && indexes.Any())
                 {
-                    if (index is MongoDbIndexesAttribute)
+                    foreach (var index in indexes)
                     {
-                        var att = index as MongoDbIndexesAttribute;
-                        var keys = Builders<TDocument>.IndexKeys.Ascending(att.Index);
-                        var options = new CreateIndexOptions { Unique = true };
-                        _collection.Indexes?.CreateOne(new CreateIndexModel<TDocument>(keys, options));
+                        if (index is MongoDbIndexesAttribute)
+                        {
+                            var att = index as MongoDbIndexesAttribute;
+                            if (indexNames.Any(x => x.Contains(att.Index))) continue;
+                            var keys = Builders<TDocument>.IndexKeys.Ascending(att.Index);
+                            var options = new CreateIndexOptions { Unique = true };
+                            _collection.Indexes?.CreateOne(new CreateIndexModel<TDocument>(keys, options));
+                        }
                     }
                 }
+            } catch (Exception ex)
+            {
+                logger.Log(LogLevel.Error, $"MongoDb error {collectionAtt.CollectionName}");
+                logger.Log(LogLevel.Error, ex.StackTrace);
+                throw;
             }
         }
 

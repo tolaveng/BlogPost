@@ -1,0 +1,69 @@
+﻿@page "/login"
+@layout BlankLayout
+@using Core.Application.DTOs
+@inject NavigationManager navigationManager
+@attribute [AllowAnonymous]
+
+<div class="mt-5" style="margin: 0 auto; max-width: 520px;">
+    <h5>Login</h5>
+    <div class="row">
+        <EditForm Model="@user" OnValidSubmit="@LoginUser">
+            <DataAnnotationsValidator/>
+            <div class="col-12 row">
+                <InputText class="form-control col-12" @bind-Value="user.Username" placeholder="Username" />
+                <ValidationMessage For="@(() => user.Username)" />
+            </div>
+            <br />
+            <div class="col-12 row">
+                <InputText type="password" class="form-control col-12" @bind-Value="user.Password" placeholder="Password" />
+                <ValidationMessage For="@(() => user.Password)" />
+            </div>
+            <br />
+            <span class="col-12">@errorMessage</span>
+            <br />
+            <div class="col-12 row">
+                <span class="col-4"></span>
+                <input type="submit" class="form-control col-8 btn btn-primary" value="Login" disabled="@isSubmitting" />
+                <span class="col-4"></span>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+
+@code {
+    [Inject]
+    public IUserService userService { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string ReturnUrl { get; set; }
+
+    private bool isSubmitting;
+    private string errorMessage;
+    private UserDto user = new UserDto();
+
+    private async Task LoginUser()
+    {
+        var returnUrl = ReturnUrl ?? "/";
+
+        if (string.IsNullOrWhiteSpace(user.Username) || string.IsNullOrWhiteSpace(user.Password))
+        {
+            errorMessage = "Username and Password are required";
+            return;
+        }
+
+        isSubmitting = true;
+
+        var loggedInUser = await userService.SignInAsync(user.Username, user.Password);
+        if (loggedInUser == null)
+        {
+            errorMessage = "Invalid Username or Password";
+            isSubmitting = false;
+            return;
+        }
+
+        navigationManager.NavigateTo(returnUrl);
+        return;
+    }
+}

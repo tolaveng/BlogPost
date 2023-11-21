@@ -20,10 +20,10 @@ namespace Core.Application.Utils
 
         public static bool IsPasswordMatch(string password, string passwordSalf, string passwordHash)
         {
-            var key = Encoding.UTF8.GetBytes(passwordSalf);
-            using var hmac = new HMACSHA256(key);
+            var key = Convert.FromBase64String(passwordSalf);
+            using var hmac = new HMACSHA512(key);
             var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(password));
-            return Convert.ToBase64String(hash).SequenceEqual(passwordHash);
+            return hash.SequenceEqual(Convert.FromBase64String(passwordHash));
         }
     }
 }

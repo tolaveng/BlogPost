@@ -56,9 +56,28 @@ namespace Core.Application.Services
 
         public async Task<UserDto> GetUserByUsernameAsync(string username)
         {
-            var user = await mongoRespository.FindOneAsync(x => x.Email.Equals(username));
+            var user = await mongoRespository.FindOneAsync(x => x.Username.Equals(username));
             if (user == null) return null;
             return mapper.Map<UserDto>(user);
+        }
+
+        public async Task<UserDto> SignInAsync(string username, string password)
+        {
+            try
+            {
+                var user = await mongoRespository.FindOneAsync(x => x.Username.Equals(username));
+                if (user == null) return null;
+
+                var isMatched = PasswordUtil.IsPasswordMatch(password, user.PasswordSalf, user.PasswordHash);
+                if (!isMatched) return null;
+
+                user.PasswordHash = "";
+                user.PasswordSalf = "";
+                return mapper.Map<UserDto>(user);
+            } catch (Exception)
+            {
+                return null;
+            }
         }
     }
 }

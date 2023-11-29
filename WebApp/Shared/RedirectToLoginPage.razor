@@ -8,7 +8,7 @@
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         var user = (await authenticationStateTask).User;
-        if (user.Identity != null && !user.Identity.IsAuthenticated)
+        if (user.Identity == null || !user.Identity.IsAuthenticated)
         {
             var returnUrl = "/" + navigationManager.ToBaseRelativePath(navigationManager.Uri);
             navigationManager.NavigateTo($"/login?returnUrl={returnUrl}", forceLoad:true);

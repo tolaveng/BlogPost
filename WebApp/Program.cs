@@ -1,5 +1,8 @@
 using Core.Application.Ioc;
 using Core.Infrastructure.Ioc;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Components.Authorization;
+using WebApp.Auth;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,7 +16,6 @@ builder.Services.AddInfrastructureServices(builder.Configuration);
 builder.Services.AddApplicationServices(builder.Configuration);
 
 
-
 // Requires all users to be authenticated - NOT WORK with Blazor razor component
 // Solution: add [Authorize] attribute to _Import.razor
 // builder.services.AddAuthorization(opt =>
@@ -22,6 +24,23 @@ builder.Services.AddApplicationServices(builder.Configuration);
 //        .RequireAuthenticatedUser()
 //        .Build();
 //});
+
+builder.Services.AddOptions();
+
+
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme,
+        options => builder.Configuration.Bind("CookieSettings", options));
+
+builder.Services.AddAuthorizationCore();
+
+//builder.Services.AddCascadingAuthenticationState();
+builder.Services.AddScoped<AuthenticationStateProvider, AppAuthenticationStateProvider>();
+
+builder.Services.AddHttpContextAccessor();
+
+
+//---------------- App -----------------------
 
 var app = builder.Build();
 
@@ -34,8 +53,10 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
 app.UseStaticFiles();
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.UseRouting();
 

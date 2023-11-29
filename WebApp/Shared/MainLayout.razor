@@ -9,7 +9,19 @@
 
     <main>
         <div class="top-row px-4">
-            <a href="https://docs.microsoft.com/aspnet/" target="_blank">About</a>
+            <AuthorizeView>
+                <Authorizing>
+                    <span>Loading...</span>
+                </Authorizing>
+                <Authorized>
+                    <span>@context.User.Identity?.Name</span>
+                    &nbsp; &nbsp;
+                    <NavLink href="/login">Logout</NavLink>
+                </Authorized>
+                <NotAuthorized>
+                    <NavLink href="/login">Login</NavLink>
+                </NotAuthorized>
+            </AuthorizeView>
         </div>
 
         <article class="content px-4">

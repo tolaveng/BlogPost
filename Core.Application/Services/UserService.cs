@@ -4,6 +4,7 @@ using Core.Application.Services.Interfaces;
 using Core.Application.Utils;
 using Core.Domain.Documents;
 using Core.Domain.IRepositories;
+using MongoDB.Bson;
 
 namespace Core.Application.Services
 {
@@ -61,7 +62,7 @@ namespace Core.Application.Services
             return mapper.Map<UserDto>(user);
         }
 
-        public async Task<UserDto> SignInAsync(string username, string password)
+        public async Task<UserDto> AuthenticateUserAsync(string username, string password)
         {
             try
             {
@@ -74,7 +75,25 @@ namespace Core.Application.Services
                 user.PasswordHash = "";
                 user.PasswordSalf = "";
                 return mapper.Map<UserDto>(user);
+
             } catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        public async Task<UserDto> GetUserByIdAsync(ObjectId userId)
+        {
+            try
+            {
+                var user = await mongoRespository.FindByIdAsync(userId);
+                if (user == null) return null;
+
+                user.PasswordHash = "";
+                user.PasswordSalf = "";
+                return mapper.Map<UserDto>(user);
+            }
+            catch (Exception)
             {
                 return null;
             }

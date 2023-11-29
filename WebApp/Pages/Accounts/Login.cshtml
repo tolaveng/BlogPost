@@ -1,0 +1,49 @@
+﻿@page "/login"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components
+
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+
+@attribute [AllowAnonymous]
+
+@model WebApp.Pages.Accounts.LoginModel
+
+<div class="mt-5" style="margin: 0 auto; max-width: 520px;">
+    <h5>Login</h5>
+    <div class="row">
+         <form method="post" id="account">
+            <div class="col-12 row">
+                <input type="text" class="form-control col-12" asp-for="UserInput.Username"  placeholder="Username" autofocus />
+                <span asp-validation-for="UserInput.Username" class="text-danger"></span>
+            </div>
+            <br />
+            <div class="col-12 row">
+                <input type="password" class="form-control col-12" asp-for="UserInput.Password" placeholder="Password" />
+                <span asp-validation-for="UserInput.Password" class="text-danger"></span>
+            </div>
+            
+            @if (!string.IsNullOrWhiteSpace(@Model.ErrorMessage))
+            {
+                <br />
+                <div class="col-12 text-danger">@Html.Raw((MarkupString)Model.ErrorMessage)</div>
+            }
+            @if (!@ModelState.IsValid)
+            {
+                 <br />
+                <div asp-validation-summary="All" class="text-danger"></div>   
+            }
+            <br />
+            <div class="col-12 row">
+                <span class="col-4"></span>
+                <input type="submit" class="form-control col-8 btn btn-primary" value="Login" />
+                <span class="col-4"></span>
+            </div>
+
+            <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+            @Html.AntiForgeryToken()
+        </form>
+    </div>
+</div>
+
+@{
+}

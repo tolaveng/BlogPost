@@ -24,6 +24,7 @@ It's simple web application to store html contents and images to serve as a head
 - Plain C# object domain entities
 
 ## Core.Application
+- Microsoft.AspNetCore.Components.Authorization (already installed)
 
 ## Core.Infrastructure
 - MongoDb

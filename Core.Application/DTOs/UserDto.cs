@@ -1,10 +1,15 @@
-﻿using MongoDB.Bson;
+﻿using Core.Application.Utils;
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
+using Newtonsoft.Json;
 using System.ComponentModel.DataAnnotations;
 
 namespace Core.Application.DTOs
 {
     public class UserDto
     {
+
+        [JsonConverter(typeof(ObjectIdConverter))]
         public ObjectId Id { get; set; }
 
         [Required(ErrorMessage = "Username cannot be empty")]
@@ -17,5 +22,6 @@ namespace Core.Application.DTOs
         public string Email { get; set; } = string.Empty;
         public bool IsEmailVerified { get; set; }
         public bool IsDisabled { get; set; }
+
     }
 }

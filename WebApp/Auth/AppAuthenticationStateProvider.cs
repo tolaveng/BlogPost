@@ -3,6 +3,7 @@ using Core.Application.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Components.Authorization;
 using MongoDB.Bson;
+using Newtonsoft.Json;
 using System.Security.Claims;
 
 namespace WebApp.Auth
@@ -53,6 +54,8 @@ namespace WebApp.Auth
                 new Claim(ClaimTypes.NameIdentifier, userDto.Id.ToString()),
                 new Claim(ClaimTypes.Email, userDto.Email),
                 new Claim(ClaimTypes.Name, userDto.Email),
+                new Claim(ClaimTypes.UserData, JsonConvert.SerializeObject(userDto)),
+                
             };
             var principal = new ClaimsPrincipal(new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme));
             return await Task.FromResult(new AuthenticationState(principal));

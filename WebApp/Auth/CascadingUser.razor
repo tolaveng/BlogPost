@@ -1,0 +1,36 @@
+﻿@using System.Security.Claims
+@using MongoDB.Bson
+@using Newtonsoft.Json
+
+<CascadingValue Value="@authUser" IsFixed="false">
+    @ChildContent
+</CascadingValue>
+
+@code {
+    [Parameter]
+    public RenderFragment ChildContent { get; set; }
+
+    [CascadingParameter]
+    private Task<AuthenticationState>? authenticationState { get; set; }
+
+    public UserDto authUser { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (authenticationState is not null)
+        {
+            var authState = await authenticationState;
+            var user = authState?.User;
+            if (user?.Identity is not null && user.Identity.IsAuthenticated)
+            {
+                // See AppAuthenticationStateProvider
+                var userData = user.FindFirst(ClaimTypes.UserData);
+                if (userData?.Value is not null)
+                {
+                    authUser = JsonConvert.DeserializeObject<UserDto>(userData.Value);
+                }
+            }
+        }
+    }
+
+}

@@ -14,6 +14,7 @@ namespace Core.Application.Ioc
             services.AddAutoMapper(typeof(AutoMapperProfile));
             services.AddScoped<ISettingService, SettingService>();
             services.AddScoped<IUserService, UserService>();
+            services.AddScoped<IPostService, PostService>();
         }
     }
 }

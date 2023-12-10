@@ -42,7 +42,6 @@
 
             // using bootstrap to show toast
             node.addEventListener('hidden.bs.toast', () => {
-                console.log('toast close');
                 node.remove();
             })
             const toastBootstrap = bootstrap.Toast.getOrCreateInstance(node);

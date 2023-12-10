@@ -12,6 +12,8 @@ namespace Core.Application.Mapper
             CreateMap<UserDto, User>();
             CreateMap<User, UserDto>()
                 .ForMember(x => x.Password, x => x.MapFrom(z => ""));
+
+            CreateMap<PostDto, Post>().ReverseMap();
         }
     }
 }

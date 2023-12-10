@@ -1,0 +1,193 @@
+﻿@page "/post/{postId?}"
+@using Core.Application.Utils
+@using MongoDB.Bson
+
+<PageTitle>@pageTitle</PageTitle>
+
+<nav aria-label="breadcrumb" style="--bs-breadcrumb-divider: '>';">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="/">Dashboard</a></li>
+    <li class="breadcrumb-item"><a href="/posts">Posts</a></li>
+    <li class="breadcrumb-item active" aria-current="@pageTitle">@pageTitle</li>
+  </ol>
+</nav>
+
+<EditForm Model="post" OnValidSubmit="@OnFormSubmit" Context="formContext">
+    <DataAnnotationsValidator/>
+    <div class="row">
+        <div class="col-md-8">
+            <div class="mb-3 form-floating">
+                <InputText @bind-Value="@post.Title" id="title" class="form-control" placeholder="Title" @oninput="@OnTitleInput" />
+                <label for="title" class="form-label">Title</label>
+                <ValidationMessage For="@(() => post.Title)"/>
+            </div>
+            <div class="mb-3 form-floating">
+                <InputText @bind-Value="@post.Path" id="path" class="form-control" placeholder="Path" />
+                <label for="path" class="form-label">Path</label>
+                <ValidationMessage For="@(() => post.Path)"/>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Content</label>
+                <TEditor @bind-Value="@post.Content" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Summary</label>
+                <TEditor @bind-Value="@post.Summary" />
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="border rounded-2 p-2">
+                <div class="mb-3 form-floating">
+                    <InputSelect @bind-Value="post.PostType" class="form-select" id="postType">
+                        @foreach (var type in Enum.GetValues<PostType>())
+                        {
+                            <option value="@type">@type</option>
+                        }
+                    </InputSelect>
+                    <label for="postType" class="form-label">Post Type</label>
+                    <ValidationMessage For="@(() => post.PostType)"/>
+                </div>
+                <div class="mb-3 form-floating">
+                    <InputText @bind-Value="tags" id="tags" class="form-control" placeholder="Tags" />
+                    <label for="tags" class="form-label">Tags</label>
+                </div>
+                <div class="mb-3 form-floating">
+                    <InputDate @bind-Value="post.PublishedDateTime" id="publishedDateTime" class="form-control" placeholder="Publish Date" />
+                    <label for="publishedDateTime" class="form-label">Publish Date</label>
+                </div>
+                <div class="mb-3 form-floating">
+                    <InputDate @bind-Value="post.ModifiedDateTime" id="modifiedDateTime" class="form-control" placeholder="Modify Date" />
+                    <label for="modifiedDateTime" class="form-label">Modify Date</label>
+                </div>
+                <div class="mb-3 ms-2">
+                    <InputCheckbox @bind-Value="post.IsPublished" id="isPublished" />
+                    <label for="isPublished" class="form-label">Publish</label>
+                </div>
+                <div class="mb-3"></div>
+
+                <div class="mb-3 d-flex ms-2">
+                    <button type="submit" class="btn btn-primary me-4" disabled="@isSubmitting">
+                       Save
+                    </button>
+                    <button type="button" class="btn btn-secondary me-4" @onclick="@GoToPosts">
+                       Cancel
+                    </button>
+                </div>
+
+            </div>
+            <div class="text-danger mt-4">
+                @if (formContext.IsModified() && !formContext.Validate())
+                {
+                    <ValidationSummary/>
+                }
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div>@errorMessage</div>
+                }
+            </div>
+        </div>
+    </div>
+</EditForm>
+
+
+@code {
+    [CascadingParameter]
+    public UserDto user { get; set; }
+
+    [Inject]
+    public ITToast Toast { get; set; }
+
+    [Inject]
+    public IPostService postService { get; set; }
+
+    [Inject]
+    public NavigationManager navigationManager { get; set; }
+
+    [Parameter]
+    public string postId { get; set; }
+
+    string pageTitle = "";
+    bool isEdit = false;
+    string tags = "";
+    PostDto post = new PostDto();
+
+    bool isSubmitting;
+    string errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        pageTitle = string.IsNullOrWhiteSpace(postId) ? "Add Post" : "Edit Post";
+        post.IsPublished = true;
+
+        // edit post
+        if (!string.IsNullOrWhiteSpace(postId))
+        {
+            if (ObjectId.TryParse(postId, out var postObjectId))
+            {
+                post = await postService.GetPost(postObjectId);
+                if (post == null)
+                {
+                    navigationManager.NavigateTo("/notfound", true);
+                }
+                isEdit = true;
+                tags = string.Join(", ", post.Tags);
+
+            } else
+            {
+                navigationManager.NavigateTo("/notfound", true);
+            }
+        }
+    }
+
+    public async Task OnFormSubmit()
+    {
+        isSubmitting = true;
+        errorMessage = "";
+
+        post.Tags = tags.RemoveWhiteSpace().Split(",");
+
+        if (string.IsNullOrWhiteSpace(postId))
+        {
+            post.UserId = user.Id;
+            post.Id = ObjectId.GenerateNewId();
+            var created = await postService.CreatePost(post);
+            if (created)
+            {
+                await Toast.Show("Success", "Post created successfully", "success");
+                navigationManager.NavigateTo($"/post/{post.Id}", true);
+                return;
+            }
+        } else
+        {
+            var updated = await postService.UpdatePost(post);
+            if (updated)
+            {
+                //navigationManager.NavigateTo("/posts", true);
+                await Toast.Show("Success", "Post Saved successfully", "success");
+                isSubmitting = false;
+                return;
+            }
+        }
+
+        errorMessage = "Something went wrong. Please try again later";
+        await Toast.Show("Error", "Cannot update post.", "error");
+        isSubmitting = false;
+    }
+
+    void GoToPosts ()
+    {
+        navigationManager.NavigateTo("/posts", false);
+    }
+
+    void OnTitleInput(ChangeEventArgs e)
+    {
+        var input = e.Value != null ? e.Value as string : "";
+        if (!string.IsNullOrWhiteSpace(input))
+        {
+            post.Path = input.RemoveSpecialChars();
+        } else
+        {
+            post.Path = "";
+        }
+    }
+}

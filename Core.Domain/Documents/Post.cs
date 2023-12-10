@@ -16,8 +16,9 @@ namespace Core.Domain.Documents
         public string Content { get; set; } = string.Empty;
         public string Summary { get; set; } = string.Empty;
         public string[] Tags { get; set; } = new string[0];
-        public DateTime CreatedDateTime { get; set; }
+        public DateTime PublishedDateTime { get; set; }
         public DateTime ModifiedDateTime { get; set; }
+        public bool IsPublished { get; set; }
         public bool IsArhived { get; set; }
         public string FeatureImageUrl { get; set; } = string.Empty;
     }

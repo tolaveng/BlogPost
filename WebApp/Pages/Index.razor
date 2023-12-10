@@ -1,13 +1,24 @@
 ﻿@page "/"
-@layout BlankLayout
 
-<PageTitle>Index</PageTitle>
-
-<h1>Hello, world!</h1>
-
-Welcome to your new app.
-
+<button @onclick="RunTest">Click me</button>
+@message
 
 @code {
 
+    [Inject]
+    public ITToast Toast { get; set; }
+
+
+    private string message = "Not clicked yet.";
+
+
+
+    private void RunTest()
+    {
+        message = "Run Test";
+
+        Toast.Show("Test title", "Test message", "success");
+
+        message = "Run Test Finish";
+    }
 }

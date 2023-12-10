@@ -1,0 +1,61 @@
+﻿@inject IJSRuntime JSRuntime
+@using System.Net
+@using System.Text.RegularExpressions
+
+
+<div class="border rounded-2">
+    <textarea cols="3" class="tiny_editor rounded-2" style="width: 100%" id="@instanceId">
+        @(Value)
+    </textarea>
+</div>
+
+@code {
+
+    private IJSObjectReference JsModule;
+
+    [Parameter] public string Value { get; set; } = String.Empty;
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+
+
+    private string instanceId = $"tEditor_{Guid.NewGuid().ToString().Replace("-", "")}";
+
+    protected override void OnParametersSet()
+    {
+        Value = !string.IsNullOrWhiteSpace(Value) ? RemoveScriptTags(Value) : "";
+    }
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await base.OnAfterRenderAsync(firstRender);
+        if (firstRender)
+        {
+           JsModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "/Components/TEditor.razor.js");
+           await JsModule.InvokeVoidAsync("TEditor_Init", DotNetObjectReference.Create(this), instanceId);   
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (JsModule != null)
+        {
+            await JsModule.DisposeAsync();
+        }
+    }
+
+    // callback from javascript
+    [JSInvokable("TEditorChanaged")]
+    public async Task TEditorChanaged(string response)
+    {
+        if (ValueChanged.HasDelegate)
+        {
+            await ValueChanged.InvokeAsync(response);
+        }
+    }
+
+    private string RemoveScriptTags(string input)
+    {
+        Regex regex = new Regex(@"<script[^>]*>[\s\S]*?</script>", RegexOptions.IgnoreCase);
+        return regex.Replace(input, "");
+    }
+}

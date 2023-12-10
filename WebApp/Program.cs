@@ -3,6 +3,7 @@ using Core.Infrastructure.Ioc;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Components.Authorization;
 using WebApp.Auth;
+using WebApp.Components.TToast;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,6 +15,7 @@ builder.Services.AddServerSideBlazor();
 
 builder.Services.AddInfrastructureServices(builder.Configuration);
 builder.Services.AddApplicationServices(builder.Configuration);
+builder.Services.AddScoped<ITToast, TToastProvider>();
 
 
 // Requires all users to be authenticated - NOT WORK with Blazor razor component

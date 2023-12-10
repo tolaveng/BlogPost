@@ -4,30 +4,13 @@
 
 <CascadingUser>
     <div class="page">
-        <div class="sidebar">
-            <NavMenu />
-        </div>
-
+        <NavMenu/>
         <main>
-            <div class="top-row px-4">
-                <AuthorizeView>
-                    <Authorizing>
-                        <span>Loading...</span>
-                    </Authorizing>
-                    <Authorized>
-                        <span>@context.User.Identity?.Name</span>
-                        &nbsp; &nbsp;
-                        <NavLink href="/login">Logout</NavLink>
-                    </Authorized>
-                    <NotAuthorized>
-                        <NavLink href="/login">Login</NavLink>
-                    </NotAuthorized>
-                </AuthorizeView>
-            </div>
-
             <article class="content px-4">
                 @Body
             </article>
         </main>
     </div>
 </CascadingUser>
+
+<TToast/>

@@ -1,0 +1,42 @@
+﻿<div class="toast-container position-fixed bottom-0 end-0 p-3" id="TToast-container" @ref="@containerRef">    
+</div>
+<!-- Toast alert template -->
+<div id="TToast-alert-template" @ref="@templateRef" style="display: none">
+    <div class="toast" role="alert" aria-live="assertive" aria-atomic="true" >
+      <div class="toast-header">
+        <strong class="me-auto">{title}</strong>
+        <small></small>
+        <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+      <div class="toast-body">
+        {message}
+      </div>
+    </div>
+</div>
+
+@code {
+    [Inject]
+    protected IJSRuntime JSRuntime { get; set; }
+
+    private IJSObjectReference JsModule;
+
+    private ElementReference containerRef;
+    private ElementReference templateRef;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            JsModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "/Components/TToast/TToast.razor.js");
+            await JsModule.InvokeVoidAsync("TToast_init", containerRef, templateRef);
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (JsModule != null)
+        {
+            await JsModule.DisposeAsync();
+        }
+    }
+}

@@ -3,22 +3,57 @@
 <button @onclick="RunTest">Click me</button>
 @message
 
+<br/>
+<button @onclick="ShowModal2">Show modal 2</button>
+
+<TModal Title="Test title" @ref="@tModal">
+    <p>Test body</p>
+</TModal>
+
+<TModal Title="Test title 2" @ref="@tModal2" backDropClose=false>
+    <ChildContent>
+        <p>Test custom buttons</p>
+    </ChildContent>
+    <Buttons>
+        <button type="button" class="btn btn-secondary" @onclick="closeModal2" >Close</button>
+        <button type="button" class="btn btn-primary"  @onclick="closeModal2">Done</button>
+    </Buttons>
+</TModal>
+
 @code {
 
     [Inject]
     public ITToast Toast { get; set; }
 
+    protected TModal tModal { get; set; }
+
+    protected TModal tModal2 { get; set; }
 
     private string message = "Not clicked yet.";
 
 
 
-    private void RunTest()
+    private async Task RunTest()
     {
         message = "Run Test";
 
-        Toast.Show("Test title", "Test message", "success");
+        // show modal
+        await tModal.Show();
+
+        // show toast
+        await Toast.Show("Test title", "Test message", "success");
+
 
         message = "Run Test Finish";
+    }
+
+    private async Task ShowModal2()
+    {
+        await tModal2.Show();
+    }
+
+    private async Task closeModal2()
+    {
+        await tModal2.Close();
     }
 }

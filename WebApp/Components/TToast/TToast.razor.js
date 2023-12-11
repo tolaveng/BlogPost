@@ -33,8 +33,8 @@
             containerRef.appendChild(node);
 
             // change color scheme
-            const headerNode = containerRef.querySelector('.toast-header');
-            const closeBtn = containerRef.querySelector('.btn-close');
+            const headerNode = node.querySelector('.toast-header');
+            const closeBtn = node.querySelector('.btn-close');
             if (headerNode) {
                 headerNode.classList.add(getToastClass(type));
                 closeBtn.classList.add('btn-close-white');

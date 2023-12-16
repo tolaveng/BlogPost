@@ -5,7 +5,7 @@ namespace Core.Application.Services.Interfaces
 {
     public interface IPostService
     {
-        Task<Pagination<PostDto>> GetPosts(Pagable pagable);
+        Task<Pagination<PostDto>> GetPosts(Pageable pagable, string? searchText);
         Task<PostDto> GetPost(ObjectId postId);
         Task<bool> CreatePost(PostDto postDto);
         Task<bool> UpdatePost(PostDto postDto);

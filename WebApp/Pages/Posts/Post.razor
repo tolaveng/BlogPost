@@ -153,8 +153,9 @@
             var created = await postService.CreatePost(post);
             if (created)
             {
-                await Toast.Show("Success", "Post created successfully", "success");
-                navigationManager.NavigateTo($"/post/{post.Id}", true);
+                await Toast.Show("Success", "Post created successfully <a href='/posts'>Go to Post</a>", "success");
+                isSubmitting = false;
+                navigationManager.NavigateTo($"/post/{post.Id}", false);
                 return;
             }
         } else
@@ -163,7 +164,7 @@
             if (updated)
             {
                 //navigationManager.NavigateTo("/posts", true);
-                await Toast.Show("Success", "Post Saved successfully", "success");
+                await Toast.Show("Success", "Post created successfully <a href='/posts'>Go to Post</a>", "success");
                 isSubmitting = false;
                 return;
             }

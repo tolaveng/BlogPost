@@ -27,5 +27,10 @@ namespace Core.Application.Utils
             Regex regex = new Regex(@"<script[^>]*>[\s\S]*?</script>", RegexOptions.IgnoreCase);
             return regex.Replace(input, "");
         }
+
+        public static string StripHTML(this String input)
+        {
+            return Regex.Replace(input, "<.*?>", String.Empty);
+        }
     }
 }

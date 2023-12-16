@@ -72,11 +72,18 @@ namespace Core.Application.Services
             }
         }
 
-        public async Task<Pagination<PostDto>> GetPosts(Pagable pagable)
+        public async Task<Pagination<PostDto>> GetPosts(Pageable pagable, string? searchText)
         {
             try
             {
                 var queryable = respository.AsQueryable();
+                if (! string.IsNullOrWhiteSpace(searchText))
+                {
+                    queryable = queryable.Where(x => x.Title.Contains(searchText)
+                    || x.Summary.Contains(searchText)
+                    || x.Content.Contains(searchText)
+                    );
+                }
                 var count = queryable.Count();
                 var totalPages = (int)Math.Ceiling((decimal)count / pagable.PageSize);
 

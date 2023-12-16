@@ -1,0 +1,177 @@
+﻿@page "/posts"
+@using MongoDB.Bson
+@inject NavigationManager navigationManager
+
+<PageTitle>Posts</PageTitle>
+
+<nav aria-label="breadcrumb" style="--bs-breadcrumb-divider: '>';">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="/">Dashboard</a></li>
+    <li class="breadcrumb-item active">Posts</li>
+  </ol>
+</nav>
+
+<div>
+    <div class="d-flex justify-content-between m-4">
+        <a title="Add New" class="btn btn-primary" href="/post">
+                <i class="ri-add-line"></i> Add new post
+        </a>
+
+        <form @onsubmit="Search">
+            <div class="border rounded-2 p-2">
+            <input type="text" placeholder="Search" class="border-0" @bind-value="searchText"/>
+            <button type="submit" title="Search" class="border-0 bg-transparent">
+                <i class="ri-search-line ms-2"></i>
+            </button>
+            </div>
+        </form>
+     </div>
+    
+
+    <table class="table table-striped table-hover table-bordered table-responsive-sm">
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Summary</th>
+                <th style="width: 100px">Type</th>
+                <th style="width: 150px">PUblish Date</th>
+                <th style="width: 120px">Published</th>
+                <th style="width: 120px"></th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (posts == null || isLoading)
+            {
+                <tr><td colspan=7><SpinnerLoading/></td></tr>
+            }
+
+            @if (!posts.Any())
+            {
+                <tr><td colspan=7>No post yet.</td></tr>
+            }
+            @foreach (var post in posts)
+            {
+                <tr>
+                    <td><a href="/post/@post.Id" target="_blank">@post.Title</a></td>
+                    <td>@(post.Summary.StripHTML())</td>
+                    <td>@post.PostType</td>
+                    <td>@post.PublishedDateTime.ToString("dd/MM/yy")</td>
+                    <td>
+                        @if(post.IsPublished) {
+                            <i class="ri-check-line"></i>
+                        }
+                    </td>
+                    <td>
+                        <a href="/post/@post.Id" title="Edit"  class="btn btn-link text-decoration-none">
+                            <i class="ri-pencil-fill"></i>
+                        </a> |
+                        <button class="btn btn-link text-decoration-none text-danger" title="Delete" @onclick="() => ConfirmDelete(post.Id)">
+                            <i class="ri-delete-bin-line"></i>
+                        </button>
+                    </td>
+                </tr>
+            }
+
+        </tbody>
+    </table>
+
+    <nav aria-label="Page navigation example">
+        <ul class="pagination">
+            <li class="page-item">
+              <a class="page-link" href="" aria-label="Previous"
+                @onclick="() => ChangePage(pageNo > 1 ? pageNo-1 : 1)" @onclick:preventDefault>
+                <span aria-hidden="true">&laquo;</span>
+              </a>
+            </li>
+            @for(var i=1; i<=pageCount; i++)
+            {
+                var temp = i;
+                var active = i == pageNo ? "active" : "";
+                <li class="page-item @active">
+                    <a class="page-link"  @onclick="() => ChangePage(temp)" @onclick:preventDefault >@(i)</a>
+                </li>
+            }
+            
+            <li class="page-item">
+              <a class="page-link" href="" aria-label="Next"
+                @onclick="() => ChangePage(pageNo < pageCount ? pageNo+1 : pageCount)" @onclick:preventDefault>
+                <span aria-hidden="true">&raquo;</span>
+              </a>
+            </li>
+        </ul>
+    </nav>
+</div>
+
+<TModal Title="Delete" @ref="deleteModal">
+    <ChildContent>
+        <span>Are you sure you want to delete this post?</span>
+    </ChildContent>
+    <Buttons>
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-danger" @onclick="DeletePost">Delete</button>
+    </Buttons>
+</TModal>
+
+@code {
+    [CascadingParameter]
+    public UserDto user { get; set; }
+
+    [Inject]
+    public IPostService postService { get; set; }
+
+    TModal deleteModal;
+    private bool isLoading = false;
+    private List<PostDto> posts = new List<PostDto>();
+    private int pageSize = 3;
+    private int pageNo = 20;
+    private int pageCount = 1;
+    private string searchText;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await loadPost();
+    }
+
+    private async Task loadPost()
+    {
+        isLoading = true;
+        StateHasChanged();
+
+        var pageable = new Pageable(pageNo, pageSize);
+        var pagination = await postService.GetPosts(pageable, searchText);
+        posts = pagination.Items.ToList();
+        pageCount = pagination.TotalPages;
+        isLoading = false;
+
+        StateHasChanged();
+    }
+
+    private async Task ChangePage(int page)
+    {
+        pageNo = page;
+        await loadPost();
+    }
+
+    private async Task Search()
+    {
+        await loadPost();
+    }
+
+    private async Task ConfirmDelete(ObjectId postId)
+    {
+        deleteModal.tag = postId;
+        await deleteModal.Show();
+    }
+
+    private async Task DeletePost()
+    {
+        if (deleteModal.tag != null && deleteModal.tag is ObjectId)
+        {
+            isLoading = true;
+            var postId = (ObjectId) deleteModal.tag;
+            await postService.DeletePost(postId);
+            await deleteModal.Close();
+            await loadPost();
+        }
+    }
+}

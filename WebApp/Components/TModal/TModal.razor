@@ -1,0 +1,135 @@
+﻿<div class="modal fade" tabindex="-1" @ref="modalRef" data-bs-backdrop="@(backDropClose ? false : "static")">
+  <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered @GetModalSize()">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">@Title</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        @ChildContent
+      </div>
+      <div class="modal-footer">
+          <div class="modal-footer-left">
+              @if (!string.IsNullOrWhiteSpace(Description))
+              {
+                <div>@Description</div> 
+              }
+          </div>
+          <div class="modal-footer-right">
+              @if (Buttons != null)
+                {
+                    @Buttons
+                } else
+                {
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>   
+                }
+          </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+@code {
+    private ElementReference modalRef;
+
+    [Parameter]
+    public string Title { get; set; }
+
+    [Parameter]
+    public ModalSize Size { get; set; } = ModalSize.medium;
+
+    [Parameter]
+    public string Description { get; set; }
+
+    [Parameter]
+    public RenderFragment ChildContent { get; set; }
+
+    [Parameter]
+    public RenderFragment Buttons { get; set; }
+
+
+    [Parameter]
+    public bool backDropClose { get; set; } = true;
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+
+    [Inject]
+    protected IJSRuntime JsRuntime { get; set; }
+
+    public Object tag { get; set; }
+
+    private IJSObjectReference jsModule;
+    private IJSObjectReference modalModule;
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            jsModule = await JsRuntime.InvokeAsync<IJSObjectReference>("import", "/Components/TModal/TModal.razor.js");
+            modalModule = await jsModule.InvokeAsync<IJSObjectReference>("TModal_init", DotNetObjectReference.Create(this));
+        }
+    }
+
+    public async Task Show()
+    {
+        await modalModule.InvokeVoidAsync("show", modalRef);
+    }
+
+    public async Task Close()
+    {
+        await modalModule.InvokeVoidAsync("close", modalRef);
+        if (OnClose.HasDelegate)
+        {
+            await OnClose.InvokeAsync();
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (jsModule != null)
+        {
+            await jsModule.DisposeAsync();
+        }
+
+        if (modalModule != null)
+        {
+            await modalModule.DisposeAsync();
+        }
+    }
+
+    // Modal dismiss from Javascript
+    [JSInvokable("OnModalCloseJs")]
+    public void OnModalCloseJs()
+    {
+        if (OnClose.HasDelegate)
+        {
+            OnClose.InvokeAsync();
+        }
+    }
+
+    string GetModalSize()
+    {
+        switch (Size)
+        {
+            case ModalSize.small:
+                return "modal-sm";
+            case ModalSize.medium:
+                return "";
+            case ModalSize.large:
+                return "modal-lg";
+            case ModalSize.xLarge:
+                return "modal-xl";
+            default:
+                return "";
+        }
+    }
+
+    public enum ModalSize
+    {
+        small, medium, large, xLarge
+    }
+
+}

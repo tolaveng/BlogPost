@@ -1,0 +1,205 @@
+﻿@using System.Collections.Concurrent
+@using WebApp.Components.FileUploader
+
+<TModal Title="@Title" @ref="uploadModal" Size="TModal.ModalSize.xLarge" BackDropClose=false
+    Description="@uploadInfo" OnClose="OnUploadModalClosed">
+    <ChildContent>
+        <FileUploader @ref="fileUploader" OnChange="OnFileUploadChange" ReadOnly="@(isUploading || isUploadFinished)" />
+    </ChildContent>
+    <Buttons>
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        @if (!isUploadFinished)
+        {
+            <button class="btn btn-primary" @onclick="HandleFileUpload" @attributes="uploadButtonAtt">Upload</button>
+        }
+    </Buttons>
+</TModal>
+
+<TModal Title="Delete" @ref="deleteModal" Size="TModal.ModalSize.small">
+    <ChildContent>
+        <span>Are you sure you want to delete this?</span>
+    </ChildContent>
+    <Buttons>
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-danger" @onclick="DeleteFile">Delete</button>
+    </Buttons>
+</TModal>
+
+
+
+@code {
+    [Inject]
+    public IFileUploadService fileUploadService { get; set; }
+
+    [Parameter]
+    public string Title { get; set; }
+
+    protected TModal uploadModal;
+    protected TModal deleteModal;
+
+    private FileUploader fileUploader;
+    private string uploadInfo;
+    private bool isUploading;
+    private bool isUploadFinished;
+
+    private CancellationTokenSource cts = new();
+    private new ConcurrentBag<FileUploadResponse> uploadResults = new ConcurrentBag<FileUploadResponse>();
+
+    private Dictionary<string, object> uploadButtonAtt = new Dictionary<string, object>()
+    {
+        { "disabled", "disabled" }
+    };
+
+    public async Task Show() {
+        await uploadModal.Show();
+    }
+
+    private FileUploaderFile[] uploadFiles = Array.Empty<FileUploaderFile>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        fileUploadService.UploadProgress += UploadProgressHandler;
+    }
+
+    private async Task OnFileUploadChange(FileUploaderFile[] files)
+    {
+        uploadFiles = files;
+
+        if (files.Any())
+        {
+            uploadButtonAtt.Remove("disabled");
+            uploadInfo = $"You have selected {uploadFiles.Count()}";
+        } else
+        {
+            uploadButtonAtt.TryAdd("disabled", "disabled");
+            uploadInfo = "";
+        }
+    }
+
+    private async Task HandleFileUpload()
+    {
+        if (!uploadFiles.Any()) return;
+        isUploading = true;
+        isUploadFinished = false;
+        uploadButtonAtt.TryAdd("disabled", "disabled");
+        cts = new();
+        uploadResults.Clear();
+        var fileCount = uploadFiles.Count();
+        uploadInfo = $"Uploading... 0/{fileCount}";
+
+        //ParallelOptions options = new() { MaxDegreeOfParallelism = 4, CancellationToken = cts.Token };
+
+        // Throw unknown error: System.NullReferenceException: Object reference not set to an instance of an object
+        //await Parallel.ForEachAsync(uploadFiles, options, async (file, ct) =>
+        //{
+        //if (ct.IsCancellationRequested || cts.IsCancellationRequested) return;
+        //var result = await ProcessFileUpload(file);
+        //uploadResults.Add(result);
+        //});
+
+        // Work but not async
+        //Parallel.ForEach(uploadFiles, file =>
+        //{
+        //    ProcessFileUpload(file).ConfigureAwait(false);
+        //});
+
+        // Run in parallel, limit by 4 tasks
+        var semaphore = new SemaphoreSlim(4);
+        var tasks = uploadFiles.Select(async file =>
+        {
+            await semaphore.WaitAsync();
+            try
+            {
+                if (cts.IsCancellationRequested) return FileUploadResponse.Fail("Upload has been cancelled");
+
+                var result = await ProcessFileUpload(file);
+                uploadResults.Add(result);
+                return result;
+            }
+            catch (Exception ex)
+            {
+                return FileUploadResponse.Fail(ex.Message);
+            } finally
+            {
+                semaphore.Release();
+            }
+        });
+
+        var results = await Task.WhenAll(tasks);
+
+        var success = results.Count(x => x != null && x.Success);
+        uploadInfo = $"File upload finished {success}/{uploadResults.Count}";
+        isUploading = false;
+        isUploadFinished = true;
+        StateHasChanged();
+    }
+
+    private async Task<FileUploadResponse> ProcessFileUpload(FileUploaderFile file)
+    {
+        try
+        {
+            if (cts.IsCancellationRequested) return FileUploadResponse.Fail("Upload has been cancelled");
+            using var fileStream = file.BrowserFile.OpenReadStream(fileUploadService.MaxFileSize);
+            var request = new FileUploadRequest(fileStream, file.Name, file.FileName, file.BrowserFile.ContentType);
+            return await fileUploadService.UploadFileAsync(request, cts.Token).ConfigureAwait(false);
+
+        } catch (Exception ex) {
+            var exce = ex.Message;
+            return FileUploadResponse.Fail(ex.Message);
+        }
+    }
+
+
+    private void UploadProgressHandler(object sender, FileUploadService.UploadProgressEventArgs e)
+    {
+        Console.WriteLine($"{e.FileName} progress: {e.Progress}");
+        //update progress
+        foreach(var file in uploadFiles)
+        {
+            if (file.FileName.Equals(e.FileName))
+            {
+                fileUploader.UpdateFileProgress(e.FileName, e.Progress);
+            }
+        }
+        // update result info
+        if (uploadResults.Any())
+        {
+            var success = uploadResults.Count(x => x != null && x.Success);
+            uploadInfo = $"Uploading... {success}/{uploadFiles.Count()}";
+            InvokeAsync(() => StateHasChanged());
+        }
+    }
+
+    private void OnUploadModalClosed()
+    {
+        uploadFiles = Array.Empty<FileUploaderFile>();
+        fileUploader.Clear();
+        uploadResults.Clear();
+        isUploading = false;
+        isUploadFinished = false;
+        uploadInfo = "";
+        StateHasChanged();
+        if (cts != null && !cts.IsCancellationRequested)
+        {
+            cts.Cancel();
+        }
+    }
+
+    public async Task ShowDeleteConfirm()
+    {
+        await deleteModal.Show();
+    }
+
+    public async Task DeleteFile()
+    {
+        
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (fileUploadService != null)
+        {
+            fileUploadService.UploadProgress -= UploadProgressHandler;
+        }
+    }
+}

@@ -1,4 +1,4 @@
-﻿<div class="modal fade" tabindex="-1" @ref="modalRef" data-bs-backdrop="@(backDropClose ? false : "static")">
+﻿<div class="modal fade" tabindex="-1" @ref="modalRef" data-bs-backdrop="@(BackDropClose ? false : "static")">
   <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered @GetModalSize()">
     <div class="modal-content">
       <div class="modal-header">
@@ -49,7 +49,7 @@
 
 
     [Parameter]
-    public bool backDropClose { get; set; } = true;
+    public bool BackDropClose { get; set; } = true;
 
     [Parameter]
     public EventCallback OnClose { get; set; }

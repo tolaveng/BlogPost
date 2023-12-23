@@ -1,0 +1,41 @@
+﻿@using System.IO
+
+<div @key="@File.FileName" class=@($"progress fileUploader-item") role="progressbar"
+    aria-valuenow="@progress" aria-valuemin="0" aria-valuemax="100">
+    @if (OnRemove.HasDelegate && !ReadOnly) {
+        <button class="fileUploader-item-delete-icon" @onclick="OnRemoveClicked" title="delete">
+            <i class="ri-close-fill"></i>
+        </button>
+    }
+    <div class="progress-bar progress-bar-striped bg-info" style="width: @progress">
+        <div class="fileUploader-file-name">@File.Name</div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public FileUploaderFile File  { get; set; }
+
+    [Parameter]
+    public bool ReadOnly { get; set; } = false;
+
+    [Parameter]
+    public EventCallback<FileUploaderFile> OnRemove { get; set; }
+
+    private string progress = "0";
+
+    protected override void OnParametersSet()
+    {
+        if (File.ProgressPercent == 0) progress = "0";
+        if (File.ProgressPercent >= 100) progress = "100%";
+        progress = $"{Math.Abs(File.ProgressPercent)}%";
+    }
+
+    private async Task OnRemoveClicked()
+    {
+        if (OnRemove.HasDelegate)
+        {
+            await OnRemove.InvokeAsync(File);
+        }
+    }
+}

@@ -16,6 +16,10 @@ a, .btn-link {
     cursor: pointer;
 }
 
+.btn {
+    text-transform: none;
+}
+
 .content {
     padding-top: 1.1rem;
 }

@@ -1,0 +1,47 @@
+﻿.fileUploader-item {
+    border: 1px solid #000000;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    height: 1.5rem;
+    margin: 8px;
+    padding: 12px 0px;
+    position: relative;
+    white-space: normal;
+    width: 45%;
+    overflow: visible;
+}
+
+.fileUploader-item .progress-bar {
+    overflow: visible;
+}
+
+::deep .fileUploader-item-delete-icon {
+    position: absolute;
+    margin: 0;
+    padding: 0;
+    top: -8px;
+    right: -8px;
+    background: red;
+    color: white;
+    border: none;
+    border-radius: 9px;
+    font-size: 18px;
+    line-height: 18px;
+}
+
+.fileUploader-item .fileUploader-file-name {
+    color: black;
+    text-align: left;
+    padding-left: 8px;
+    font-size: 1rem;
+}
+
+@media only screen and (max-width: 1199px) {
+    .fileUploader-item {
+        width: 100%;
+        margin: 8px 0px;
+    }
+}

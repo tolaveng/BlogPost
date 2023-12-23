@@ -1,6 +1,7 @@
 ﻿@page "/post/{postId?}"
 @using Core.Application.Utils
 @using MongoDB.Bson
+@using WebApp.Pages.FileUpload
 
 <PageTitle>@pageTitle</PageTitle>
 
@@ -63,6 +64,11 @@
                     <InputCheckbox @bind-Value="post.IsPublished" id="isPublished" />
                     <label for="isPublished" class="form-label">Publish</label>
                 </div>
+                <div class="mb-3">
+                    <button type="button" class="btn btn-link" @onclick="@SelectFeatureImage">Select feature image</button>
+                </div>
+
+                <div class="mb-3"></div>
                 <div class="mb-3"></div>
 
                 <div class="mb-3 d-flex ms-2">
@@ -89,6 +95,7 @@
     </div>
 </EditForm>
 
+<FileUploadModal @ref="fileUploadModal" Title="Feature Image"/>
 
 @code {
     [CascadingParameter]
@@ -113,6 +120,8 @@
 
     bool isSubmitting;
     string errorMessage;
+
+    FileUploadModal fileUploadModal;
 
     protected override async Task OnInitializedAsync()
     {
@@ -190,5 +199,10 @@
         {
             post.Path = "";
         }
+    }
+
+    void SelectFeatureImage()
+    {
+        fileUploadModal.Show();
     }
 }

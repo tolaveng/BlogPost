@@ -1,0 +1,190 @@
+﻿@using System.IO
+@using System.Threading
+
+@implements IAsyncDisposable
+
+<div>
+    <div id="fileUploaderDropZone" @ref="dropZoneElement">
+        @if (!ReadOnly)
+        {
+            <div><span>Drag and drop or </span><label for="fileUploaderFileSelector">Click here</label> to select files</div>
+        }
+    
+        <!-- File selector to add files -->
+        <input type="file" id="fileUploaderFileSelector" @ref="fileUploaderFileSelect" multiple
+        style="visibility:hidden; height: 0; width: 0;" />
+
+        <!-- Real file input to Blazor -->
+        <InputFile id="fileUploaderInputFile" @ref="inputFile" OnChange="@InputFileHandler" multiple 
+        style="display: none" />
+
+        <!-- display files -->
+        @if (uploadFiles.Any())
+        {
+            <div id="fileUploaderPreview">
+            @* new upload file *@
+            @foreach(var uploadFile in uploadFiles)
+            {
+                <FileUploaderItem @key="@uploadFile.FileName" File="@uploadFile" OnRemove="@FileRemoveHandler" ReadOnly="@ReadOnly" />
+            }
+            </div>   
+        }
+    </div>
+    <!-- display errors -->
+    <div id="fileUploaderErrorMessage">
+        @if (invalidFiles.Any())
+        {
+            <div>Please check file(s) below cannot be upload:</div>
+            @((MarkupString)string.Join("<br/>", invalidFiles));
+        }
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div>@errorMessage</div>
+        }
+    </div>
+</div>
+
+@code {
+    [Inject]
+    IJSRuntime JsRuntime { get; set; }
+
+    [Parameter]
+    public long MaxFileSize { get; set; } = 5 * 1024 * 1024 ;
+
+    [Parameter]
+    public bool ReadOnly { get; set; } = false;
+
+    [Parameter]
+    public string MaxFileSizeText { get; set; } = "5MB";
+
+    [Parameter]
+    public string[] AllowExtensions { get; set; } = new[] { ".png", ".jpg", ".jpeg", ".pdf", ".docx", ".doc", ".txt" };
+
+    [Parameter]
+    public EventCallback<FileUploaderFile[]> OnChange { get; set; }
+
+    private List<FileUploaderFile> uploadFiles = new List<FileUploaderFile>();
+    private List<string> invalidFiles = new List<string>();
+
+    private string errorMessage = "";
+    private int maxAllowFiles = 20;
+    private string DragClass = string.Empty;
+
+    private ElementReference dropZoneElement;
+    private ElementReference fileUploaderFileSelect;
+    private InputFile inputFile;
+    private IJSObjectReference fileUploaderInsance;
+    private IJSObjectReference dropZoneInstance;
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        // Initialize the drop zone
+        fileUploaderInsance = await JsRuntime.InvokeAsync<IJSObjectReference>("import", "/Components/FileUploader/FileUploader.razor.js");
+        dropZoneInstance = await fileUploaderInsance.InvokeAsync<IJSObjectReference>("TFileUploader",
+            dropZoneElement, fileUploaderFileSelect, inputFile.Element, maxAllowFiles);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try {
+            await dropZoneInstance.InvokeVoidAsync("dispose");
+            await dropZoneInstance.DisposeAsync();
+        } catch (Exception)
+        {
+            // ignored
+        }
+    }
+
+    private async void InputFileHandler(InputFileChangeEventArgs e)
+    {
+        if (ReadOnly) return;
+
+        // Why clear, BrowserFile is just a reference links to the input file.
+        uploadFiles.Clear();
+        errorMessage = "";
+        invalidFiles.Clear();
+
+        if (e.FileCount == 0)
+        {
+            if (OnChange.HasDelegate)
+            {
+                await OnChange.InvokeAsync(Array.Empty<FileUploaderFile>());
+            }
+            return;
+        }
+
+        if (e.FileCount > maxAllowFiles)
+        {
+            errorMessage = $"Allow {maxAllowFiles} to upload.";
+            return;
+        }
+
+        try
+        {
+            var files = e.GetMultipleFiles(maxAllowFiles);
+            foreach (var file in files.DistinctBy(x => x.Name))
+            {
+                if (file.Size > MaxFileSize)
+                {
+                    invalidFiles.Add($"- {file.Name} 's size must less than {MaxFileSizeText}.");
+                    continue;
+                }
+
+                var ext = Path.GetExtension(file.Name).ToLowerInvariant();
+                if (string.IsNullOrEmpty(ext) || !AllowExtensions.Contains(ext))
+                {
+                    invalidFiles.Add($"- {file.Name} 's type must be {string.Join(", ", AllowExtensions)}.");
+                    continue;
+                }
+
+                uploadFiles.Add(new FileUploaderFile(file));
+            }
+
+            if (OnChange.HasDelegate)
+            {
+                await OnChange.InvokeAsync(uploadFiles.ToArray());
+            }
+        } catch(Exception)
+        {
+            errorMessage = "Unexpected error. Please try again later.";
+        }
+    }
+
+    private async Task FileRemoveHandler(FileUploaderFile file)
+    {
+        //browserFiles = browserFiles.Where(x => x.Name != file.FileName).ToList();
+        await dropZoneInstance.InvokeVoidAsync("remove", file.FileName);
+    }
+
+    public void UpdateFileProgress(string fileName, int progress)
+    {
+        foreach(var file in uploadFiles)
+        {
+            if (file.FileName == fileName)
+            {
+                file.ProgressPercent = progress;
+            }
+        }
+        // resolve: update UI in the event handler
+        // https://stackoverflow.com/questions/56477829/how-to-fix-the-current-thread-is-not-associated-with-the-renderers-synchroniza
+        InvokeAsync(() => StateHasChanged());
+    }
+
+    public void Clear()
+    {
+        uploadFiles.Clear();
+        invalidFiles.Clear();
+        errorMessage = "";
+        dropZoneInstance.InvokeVoidAsync("removeAll");
+    }
+
+
+    public FileUploaderFile[] GetUploaderFiles()
+    {
+        return uploadFiles.ToArray();
+    }
+
+}

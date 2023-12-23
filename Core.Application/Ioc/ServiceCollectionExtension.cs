@@ -15,6 +15,7 @@ namespace Core.Application.Ioc
             services.AddScoped<ISettingService, SettingService>();
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IPostService, PostService>();
+            services.AddScoped<IFileUploadService, FileUploadService>();
         }
     }
 }

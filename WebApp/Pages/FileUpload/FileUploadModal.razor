@@ -152,7 +152,6 @@
 
     private void UploadProgressHandler(object sender, FileUploadService.UploadProgressEventArgs e)
     {
-        Console.WriteLine($"{e.FileName} progress: {e.Progress}");
         //update progress
         foreach(var file in uploadFiles)
         {

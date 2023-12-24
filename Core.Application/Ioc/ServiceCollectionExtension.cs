@@ -1,6 +1,7 @@
 ﻿using Core.Application.Mapper;
 using Core.Application.Services;
 using Core.Application.Services.Interfaces;
+using Core.Infrastructure.Settings;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -12,6 +13,9 @@ namespace Core.Application.Ioc
         {
             services.AddScoped<IHealthCheckService, HealthCheckService>();
             services.AddAutoMapper(typeof(AutoMapperProfile));
+
+            services.Configure<AzureStorageSetting>(configuration.GetSection("AzureStorage"));
+
             services.AddScoped<ISettingService, SettingService>();
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IPostService, PostService>();

@@ -130,9 +130,8 @@ namespace Core.Application.Services
                 }
 
                 OnUploadProgress(request.FileName, 100);
-                //var fileUri = AzureUtil.GetServiceSasUriForBlob(blobClient, null, true);
-                //return FileUploadResponse.Succeed(blobClient.Name, fileUri.ToString());
-                return FileUploadResponse.Succeed(blobClient.Name, request.FileSize);
+                var fileUri = AzureUtil.GenerateSasUriForBlob(blobClient, null, true);
+                return FileUploadResponse.Succeed(request.Name, blobClient.Name, fileUri.ToString(), request.ContentType);
 
             } catch (Exception ex)
             {

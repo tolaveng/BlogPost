@@ -30,8 +30,11 @@
     [Parameter]
     public string Title { get; set; }
 
+    [Parameter]
+    public EventCallback<FileUploadResponse[]> OnUploadCompleted { get; set; }
+
     protected TModal uploadModal;
-    
+
     private FileUploader fileUploader;
     private string uploadInfo;
     private bool isUploading;
@@ -124,19 +127,24 @@
 
         var results = await Task.WhenAll(tasks);
 
-        var success = results.Count(x => x != null && x.Success);
-        uploadInfo = $"File upload success: {success}/{uploadResults.Count}.";
+        var successResults = results.Where(x => x != null && x.Success).ToArray();
+        uploadInfo = $"File upload success: {successResults.Length}/{uploadResults.Count}.";
 
-        var fail = results.Where(x => x == null || !x.Success).ToArray();
-        if (fail.Any())
+        var failResults = results.Where(x => x == null || !x.Success).ToArray();
+        if (failResults.Any())
         {
-            uploadInfo += $" Failed: {fail.Count()}.";
-            errorMessage = fail[0].Message;
+            uploadInfo += $" Failed: {failResults.Count()}.";
+            errorMessage = failResults[0].Message;
         }
 
         isUploading = false;
         isUploadFinished = true;
         StateHasChanged();
+
+        if (OnUploadCompleted.HasDelegate)
+        {
+            await OnUploadCompleted.InvokeAsync(successResults);
+        }
     }
 
     private async Task<FileUploadResponse> ProcessFileUpload(FileUploaderFile file)

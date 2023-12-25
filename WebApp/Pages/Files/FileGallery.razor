@@ -1,4 +1,9 @@
-﻿<h3>File Upload Gallery</h3>
+﻿
+<div class="d-flex justify-content-between m-4">
+    <button title="Upload File" class="btn btn-primary" @onclick="ShowFileUploadModal">
+        <i class="ri-add-line"></i> Upload File
+    </button>
+</div>
 
 <div class="border rounded-2 gallery-container">
     @if (!isLoading && !files.Any())
@@ -8,7 +13,7 @@
     
     @foreach(var file in files)
     {
-        <div class="gallery-container-item">
+        <div class="gallery-container-item" @key="file.FileName">
             @if (file.IsImage && !string.IsNullOrWhiteSpace(file.FileUri)) {
                 <img src="@file.FileUri" title="@file.Name" class="gallery-container-item-image" />
                 <div class="gallery-container-item-text">
@@ -36,6 +41,7 @@
     }
 </div>
 
+<FileUploadModal @ref="fileUploadModal" Title="Upload Files" OnUploadCompleted="@OnUploadCompleted"/>
 
 <TModal Title="Delete" @ref="deleteModal" Size="TModal.ModalSize.medium">
     <ChildContent>
@@ -57,6 +63,7 @@
     private bool hasNext;
     private bool isLoading;
 
+    private FileUploadModal fileUploadModal;
     private TModal deleteModal;
     private string toDeleteFileName = "";
     private bool isDeleting;
@@ -109,5 +116,16 @@
         }
         isDeleting = false;
         await deleteModal.Close();
+    }
+
+    private async Task ShowFileUploadModal()
+    {
+        await fileUploadModal.Show();
+    }
+
+    private async Task OnUploadCompleted(FileUploadResponse[] results)
+    {
+        var removeDuplicatedFiles = results.Where(x => !files.Any(f => f.FileName.Equals(x.FileName)));
+        files.AddRange(removeDuplicatedFiles);
     }
 }

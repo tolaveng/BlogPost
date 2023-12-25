@@ -29,9 +29,15 @@
             FileUri = fileUri;
         }
 
-        public static FileUploadResponse Succeed(string fileName, string fileUri)
+        public static FileUploadResponse Succeed(string name, string fileName, string fileUri, string contentType)
         {
-            return new FileUploadResponse() { Success = true, FileName = fileName, FileUri = fileUri };
+            return new FileUploadResponse() {
+                Success = true,
+                Name = name,
+                FileName = fileName,
+                FileUri = fileUri,
+                FileContentType = contentType
+            };
         }
 
         public static FileUploadResponse Succeed(string fileName, long fileSize)

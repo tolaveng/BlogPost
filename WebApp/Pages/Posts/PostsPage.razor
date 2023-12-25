@@ -52,7 +52,7 @@
             @foreach (var post in posts)
             {
                 <tr>
-                    <td><a href="/post/@post.Id" target="_blank">@post.Title</a></td>
+                    <td>@post.Title</td>
                     <td>@(post.Summary.StripHTML())</td>
                     <td>@post.PostType</td>
                     <td>@post.PublishedDateTime.ToString("dd/MM/yy")</td>

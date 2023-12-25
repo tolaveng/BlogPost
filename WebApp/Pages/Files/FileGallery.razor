@@ -76,6 +76,9 @@
     [Inject]
     private IFileUploadService FileUploadService { get; set; }
 
+    [Parameter]
+    public EventCallback<string> OnFileSelected { get; set; }
+
     private CancellationTokenSource cts = new();
     private string paginationToken = "";
     private int pageSize = 20;
@@ -156,6 +159,13 @@
 
     private async Task ShowPreviewModal(FileUploadResponse file)
     {
+        if (OnFileSelected.HasDelegate)
+        {
+            await OnFileSelected.InvokeAsync(file.FileUri);
+            return;
+        }
+
+
         previewFile = file;
         await previewModal.Show();
     }

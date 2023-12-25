@@ -65,7 +65,16 @@
                     <label for="isPublished" class="form-label">Publish</label>
                 </div>
                 <div class="mb-3">
-                    <button type="button" class="btn btn-link" @onclick="@SelectFeatureImage">Select feature image</button>
+                    @if (!string.IsNullOrWhiteSpace(featureImageUrl))
+                    {
+                        <div class="border rounded-2" style="overflow: hidden;">
+                            <img src="@featureImageUrl" style="width: 100%; height: auto;" />
+                        </div>
+                        <button type="button" class="btn btn-link" @onclick="@SelectFeatureImage">Select new feature image</button>
+                    } else
+                    {
+                        <button type="button" class="btn btn-link" @onclick="@SelectFeatureImage">Select feature image</button>   
+                    }
                 </div>
 
                 <div class="mb-3"></div>
@@ -95,7 +104,11 @@
     </div>
 </EditForm>
 
-<FileUploadModal @ref="fileUploadModal" Title="Feature Image"/>
+<TModal Title="Select Feature Image" @ref="galleryModal" Size="TModal.ModalSize.xLarge" BackDropClose=false>
+    <ChildContent>
+        <FileGallery OnFileSelected="@OnFileSelected"/>
+    </ChildContent>
+</TModal>
 
 @code {
     [CascadingParameter]
@@ -121,7 +134,8 @@
     bool isSubmitting;
     string errorMessage;
 
-    FileUploadModal fileUploadModal;
+    private TModal galleryModal;
+    private string featureImageUrl = "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -140,6 +154,7 @@
                 }
                 isEdit = true;
                 tags = string.Join(", ", post.Tags);
+                featureImageUrl = post.FeatureImageUrl;
 
             } else
             {
@@ -154,7 +169,7 @@
         errorMessage = "";
 
         post.Tags = tags.RemoveWhiteSpace().Split(",");
-
+        post.FeatureImageUrl = featureImageUrl;
         if (string.IsNullOrWhiteSpace(postId))
         {
             post.UserId = user.Id;
@@ -201,8 +216,14 @@
         }
     }
 
-    void SelectFeatureImage()
+    private async Task SelectFeatureImage()
     {
-        fileUploadModal.Show();
+        await galleryModal.Show();
+    }
+
+    private async Task OnFileSelected(string fileUri)
+    {
+        featureImageUrl = fileUri;
+        await galleryModal.Close();
     }
 }

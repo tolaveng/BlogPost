@@ -5,11 +5,29 @@
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
 
+        public string Name { get; set; } = string.Empty;
+
         public string FileName { get; set; } = string.Empty;
 
         public string FileUri { get; set; } = string.Empty;
 
+        public string FileContentType { get; set; } = string.Empty;
+
         public long FileSize { get; set; }
+
+        public bool IsImage => FileContentType != null && FileContentType.StartsWith("image");
+
+        public FileUploadResponse()
+        {
+
+        }
+
+        public FileUploadResponse(string name, string fileName, string fileUri)
+        {
+            Name = name;
+            FileName = fileName;
+            FileUri = fileUri;
+        }
 
         public static FileUploadResponse Succeed(string fileName, string fileUri)
         {

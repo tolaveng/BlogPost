@@ -10,7 +10,7 @@
       </div>
       <div class="modal-footer">
           <div class="modal-footer-left">
-              @if (!string.IsNullOrWhiteSpace(Description))
+              @if (Description != null)
               {
                 <div>@Description</div> 
               }
@@ -39,13 +39,14 @@
     public ModalSize Size { get; set; } = ModalSize.medium;
 
     [Parameter]
-    public string Description { get; set; }
-
-    [Parameter]
     public RenderFragment ChildContent { get; set; }
 
     [Parameter]
     public RenderFragment Buttons { get; set; }
+
+
+    [Parameter]
+    public RenderFragment Description { get; set; }
 
 
     [Parameter]

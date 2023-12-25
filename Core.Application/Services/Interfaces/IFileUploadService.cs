@@ -12,5 +12,7 @@ namespace Core.Application.Services.Interfaces
         event EventHandler<UploadProgressEventArgs> UploadProgress;
 
         Task<FileUploadResponse> UploadFileAsync(FileUploadRequest fileUploadRequest, CancellationToken ct);
+        Task<bool> DeleteFileAsync(string fileName);
+        Task<Pagination<FileUploadResponse>> GetUploadFilesAsync(string paginationToken, int pageSize, CancellationToken ct);
     }
 }

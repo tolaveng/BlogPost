@@ -99,10 +99,13 @@ namespace Core.Application.Services
                 // override it
                 await blobClient.DeleteIfExistsAsync();
 
-                // set options progress
+                // set options
                 var uploadOption = new BlobUploadOptions()
                 {
-                    HttpHeaders = new BlobHttpHeaders() { ContentType = request.ContentType },
+                    HttpHeaders = new BlobHttpHeaders() {
+                        ContentType = request.ContentType,
+                        CacheControl = "public, max-age=31536000", // one year lol
+                    },
                     TransferOptions = new Azure.Storage.StorageTransferOptions() { 
                         InitialTransferSize = 1024 * 1024,
                         MaximumConcurrency = 2
@@ -111,26 +114,83 @@ namespace Core.Application.Services
                     {
                         var progressing = Math.Ceiling(Decimal.Divide(progress, request.FileSize) * 100);
                         OnUploadProgress(request.FileName, (int)progressing);
-                    })
-                };
+                    }),
+                    Metadata = new Dictionary<string, string>() {
+                        {"Name", request.Name},
+                    },
+            };
 
                 // upload
                 await blobClient.UploadAsync(request.Stream, uploadOption, ct);
 
+                
                 if (ct.IsCancellationRequested)
                 {
                     await blobClient.DeleteIfExistsAsync();
                 }
 
                 OnUploadProgress(request.FileName, 100);
-                var fileUri = AzureUtil.GetServiceSasUriForBlob(blobClient, null, true);
-                return FileUploadResponse.Succeed(blobClient.Name, fileUri.ToString());
+                //var fileUri = AzureUtil.GetServiceSasUriForBlob(blobClient, null, true);
+                //return FileUploadResponse.Succeed(blobClient.Name, fileUri.ToString());
+                return FileUploadResponse.Succeed(blobClient.Name, request.FileSize);
 
             } catch (Exception ex)
             {
                 OnUploadProgress(request.FileName, 0);
                 await blobClient.DeleteIfExistsAsync();
                 return FileUploadResponse.Fail("Something went wrong. Upload failed");
+            }
+        }
+
+        public async Task<Pagination<FileUploadResponse>> GetUploadFilesAsync(string paginationToken, int pageSize, CancellationToken ct)
+        {
+            await CreateContainer();
+            var results = new List<FileUploadResponse>();
+            var continueToken = paginationToken;
+            try
+            {
+                var blogPages = containerClient.GetBlobsAsync(BlobTraits.Metadata).AsPages(continueToken, pageSize);
+                var baseUrl = containerClient.Uri.AbsoluteUri;
+                await using var pageIterator = blogPages.GetAsyncEnumerator();
+                if (await pageIterator.MoveNextAsync())
+                {
+                    var currentPage = pageIterator.Current;
+                    continueToken = currentPage.ContinuationToken;
+                    foreach (var blogItem in currentPage.Values)
+                    {
+                        var name = blogItem.Metadata.TryGetValue("Name", out var nameValue) ? nameValue : blogItem.Name;
+                        var contentType = blogItem.Properties.ContentType;
+                        var fileUri = blogItem.Metadata.TryGetValue("SasUri", out var sasUri) 
+                            ? $"{baseUrl}/{blogItem.Name}?{sasUri}"
+                            : AzureUtil.GenerateSasUrl(containerClient, blogItem.Name, true);
+                        var response = new FileUploadResponse(name, blogItem.Name, fileUri);
+                        response.FileContentType = contentType;
+                        results.Add(response);
+                    }
+                }
+            } catch (Exception)
+            {
+                //ignored
+            }
+
+            return new Pagination<FileUploadResponse>()
+            {
+                Items = results,
+                PaginationToken = continueToken ?? "",
+            };
+        }
+
+        public async Task<bool> DeleteFileAsync(string fileName)
+        {
+            try
+            {
+                await CreateContainer();
+                var blobClient = containerClient.GetBlobClient(fileName);
+                await blobClient.DeleteIfExistsAsync();
+                return true;
+            } catch (Exception)
+            {
+                return false;
             }
         }
 

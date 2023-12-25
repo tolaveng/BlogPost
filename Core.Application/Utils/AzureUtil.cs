@@ -20,7 +20,7 @@ namespace Core.Application.Utils
 
         //
         // https://docs.microsoft.com/en-us/azure/storage/blobs/sas-service-create?tabs=dotnet
-        public static Uri GetServiceSasUriForBlob(BlobClient blobClient,
+        public static Uri GenerateSasUriForBlob(BlobClient blobClient,
             string storedPolicyName = null, bool NoExpiry = false)
         {
             // Check whether this BlobClient object has been authorized with Shared Key.
@@ -70,8 +70,41 @@ namespace Core.Application.Utils
         }
 
 
-        // https://docs.microsoft.com/en-us/rest/api/eventhub/generate-sas-token
-        public static string CreateSASToken(string resourceUri, string keyName, string key)
+        // Generate Sas Uri and save to Meta data
+
+        public static string GenerateSasUrl(BlobContainerClient containerClient, string blogName, bool NoExpiry = false)
+        {
+            try
+            {
+                if (!containerClient.CanGenerateSasUri) return "";
+
+                var blobClient = containerClient.GetBlobClient(blogName);
+                if (blobClient == null || !blobClient.Exists()) return "";
+
+                var uri = GenerateSasUriForBlob(blobClient, null, true);
+                if (uri == null) return "";
+
+                // meta data has limit string
+                var SasUri = uri.ToString().Split('?')[1];
+                var props = blobClient.GetProperties().Value;
+                var metaData = props.Metadata;
+                metaData.Remove("SasUri");
+                metaData.Add("SasUri", SasUri);
+
+                blobClient.SetMetadata(metaData);
+
+                return uri.ToString();
+
+            } catch (Exception)
+            {
+                // ignored
+            }
+            return "";
+        }
+
+
+            // https://docs.microsoft.com/en-us/rest/api/eventhub/generate-sas-token
+            public static string CreateSASToken(string resourceUri, string keyName, string key)
         {
             TimeSpan sinceEpoch = DateTime.UtcNow - new DateTime(1970, 1, 1);
             var aday = 60 * 60 * 24;

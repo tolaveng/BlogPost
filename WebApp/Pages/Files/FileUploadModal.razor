@@ -1,27 +1,23 @@
 ﻿@using System.Collections.Concurrent
 @using WebApp.Components.FileUploader
 
-<TModal Title="@Title" @ref="uploadModal" Size="TModal.ModalSize.xLarge" BackDropClose=false
-    Description="@uploadInfo" OnClose="OnUploadModalClosed">
+<TModal Title="@Title" @ref="uploadModal" Size="TModal.ModalSize.xLarge" BackDropClose=false OnClose="OnUploadModalClosed">
     <ChildContent>
         <FileUploader @ref="fileUploader" OnChange="OnFileUploadChange" ReadOnly="@(isUploading || isUploadFinished)" />
     </ChildContent>
+    <Description>
+        <div>@uploadInfo</div>
+        @if (!string.IsNullOrWhiteSpace(errorMessage))
+        {
+            <div class="text-danger">@errorMessage</div>
+        }
+    </Description>
     <Buttons>
         <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
         @if (!isUploadFinished)
         {
             <button class="btn btn-primary" @onclick="HandleFileUpload" @attributes="uploadButtonAtt">Upload</button>
         }
-    </Buttons>
-</TModal>
-
-<TModal Title="Delete" @ref="deleteModal" Size="TModal.ModalSize.small">
-    <ChildContent>
-        <span>Are you sure you want to delete this?</span>
-    </ChildContent>
-    <Buttons>
-        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-        <button class="btn btn-danger" @onclick="DeleteFile">Delete</button>
     </Buttons>
 </TModal>
 
@@ -35,12 +31,12 @@
     public string Title { get; set; }
 
     protected TModal uploadModal;
-    protected TModal deleteModal;
-
+    
     private FileUploader fileUploader;
     private string uploadInfo;
     private bool isUploading;
     private bool isUploadFinished;
+    private string errorMessage;
 
     private CancellationTokenSource cts = new();
     private new ConcurrentBag<FileUploadResponse> uploadResults = new ConcurrentBag<FileUploadResponse>();
@@ -86,6 +82,7 @@
         uploadResults.Clear();
         var fileCount = uploadFiles.Count();
         uploadInfo = $"Uploading... 0/{fileCount}";
+        errorMessage = "";
 
         //ParallelOptions options = new() { MaxDegreeOfParallelism = 4, CancellationToken = cts.Token };
 
@@ -128,7 +125,15 @@
         var results = await Task.WhenAll(tasks);
 
         var success = results.Count(x => x != null && x.Success);
-        uploadInfo = $"File upload finished {success}/{uploadResults.Count}";
+        uploadInfo = $"File upload success: {success}/{uploadResults.Count}.";
+
+        var fail = results.Where(x => x == null || !x.Success).ToArray();
+        if (fail.Any())
+        {
+            uploadInfo += $" Failed: {fail.Count()}.";
+            errorMessage = fail[0].Message;
+        }
+
         isUploading = false;
         isUploadFinished = true;
         StateHasChanged();
@@ -177,6 +182,7 @@
         isUploading = false;
         isUploadFinished = false;
         uploadInfo = "";
+        errorMessage = "";
         StateHasChanged();
         if (cts != null && !cts.IsCancellationRequested)
         {
@@ -184,15 +190,6 @@
         }
     }
 
-    public async Task ShowDeleteConfirm()
-    {
-        await deleteModal.Show();
-    }
-
-    public async Task DeleteFile()
-    {
-        
-    }
 
     public async ValueTask DisposeAsync()
     {

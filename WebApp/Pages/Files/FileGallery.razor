@@ -1,0 +1,113 @@
+﻿<h3>File Upload Gallery</h3>
+
+<div class="border rounded-2 gallery-container">
+    @if (!isLoading && !files.Any())
+    {
+        <div>No data</div>
+    }
+    
+    @foreach(var file in files)
+    {
+        <div class="gallery-container-item">
+            @if (file.IsImage && !string.IsNullOrWhiteSpace(file.FileUri)) {
+                <img src="@file.FileUri" title="@file.Name" class="gallery-container-item-image" />
+                <div class="gallery-container-item-text">
+                    @file.Name
+                </div>
+            } else {
+                <div>@file.Name</div>
+            }
+            <button class="btn-delete" title="Delete" @onclick="@(() => ConfirmDelete(file.FileName))">
+                <i class="ri-delete-bin-2-line"></i>
+            </button>
+        </div>
+    }
+
+    @if (isLoading)
+    {
+        <SpinnerLoading />
+    }
+
+    @if (!isLoading && hasNext)
+    {
+        <div class="gallery-container-item d-flex align-items-center justify-content-center">
+            <button class="btn btn-link" style="font-weight: bold" @onclick="@LoadMore">Load More</button>
+        </div>
+    }
+</div>
+
+
+<TModal Title="Delete" @ref="deleteModal" Size="TModal.ModalSize.medium">
+    <ChildContent>
+        <span>Are you sure you want to delete @toDeleteFileName?</span>
+    </ChildContent>
+    <Buttons>
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-danger" @onclick="DeleteFile">@(isDeleting ? "Deleting..." : "Delete")</button>
+    </Buttons>
+</TModal>
+
+@code {
+    [Inject]
+    private IFileUploadService FileUploadService { get; set; }
+
+    private CancellationTokenSource cts = new();
+    private string paginationToken = "";
+    private int pageSize = 20;
+    private bool hasNext;
+    private bool isLoading;
+
+    private TModal deleteModal;
+    private string toDeleteFileName = "";
+    private bool isDeleting;
+
+    private List<FileUploadResponse> files = new List<FileUploadResponse>();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await LoadData();
+        }
+    }
+
+    private async Task LoadMore()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        isLoading = true;
+        StateHasChanged();
+
+        var response = await FileUploadService.GetUploadFilesAsync(paginationToken, pageSize, cts.Token);
+        paginationToken = response.PaginationToken;
+        hasNext = !string.IsNullOrWhiteSpace(response.PaginationToken);
+        files.AddRange(response.Items);
+        isLoading = false;
+        StateHasChanged();
+    }
+
+    private async Task ConfirmDelete(string fileName)
+    {
+        if (isDeleting) return;
+        toDeleteFileName = fileName;
+        await deleteModal.Show();
+    }
+
+    private async Task DeleteFile()
+    {
+        if (isDeleting) return;
+
+        isDeleting = true;
+        var file = files.SingleOrDefault(x => x.FileName.Equals(toDeleteFileName, StringComparison.InvariantCultureIgnoreCase));
+        if (file != null)
+        {
+            await FileUploadService.DeleteFileAsync(file.FileName);
+            files.Remove(file);
+        }
+        isDeleting = false;
+        await deleteModal.Close();
+    }
+}

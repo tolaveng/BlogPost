@@ -1,0 +1,101 @@
+﻿.gallery-container {
+    width: 100%;
+    min-height: 360px;
+    
+    -webkit-column-count: 6;
+    -webkit-column-gap: 16px;
+    
+    -moz-column-count: 6;
+    -moz-column-gap: 16px;
+
+    column-count: 6;
+    column-gap: 16px;
+
+    padding: 16px;
+}
+
+
+.gallery-container-item {
+    align-items: center;
+    border: 1px solid #CCC;
+    border-radius: 8px;
+    box-sizing: border-box;
+    cursor: pointer;
+    position: relative;
+    min-width: 120px;
+    width: 100% !important;
+    height: auto !important;
+    margin-bottom: 16px;
+    overflow: hidden;
+}
+
+.gallery-container-item .btn-delete {
+    border: none;
+    border-radius: 15px;
+    background: #000;
+    color: red;
+    position: absolute;
+    width: 32px;
+    height: 32px;
+    font-size: 22px;
+    line-height: 24px;
+    top: 0;
+    right: 0;
+    text-align: center;
+    display: none;
+}
+
+.gallery-container-item:hover {
+    border-color: #000;
+}
+
+.gallery-container-item:hover > .btn-delete {
+    display: block;
+}
+
+.gallery-container-item-image {
+    width: 100% !important;
+    height: auto !important;
+}
+
+
+.gallery-container-item-text {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    font-size: 0.8rem;
+    background: rgba(255, 255, 255, 0.7);
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+
+@media (max-width: 1000px) {
+    .gallery-container {
+        -moz-column-count: 4;
+        -webkit-column-count: 4;
+        column-count: 4;
+    }
+}
+
+
+@media (max-width: 800px) {
+    .gallery-container {
+        -moz-column-count: 3;
+        -webkit-column-count: 3;
+        column-count: 3;
+    }
+}
+
+@media (max-width: 460px) {
+    .gallery-container {
+        -moz-column-count: 2;
+        -webkit-column-count: 2;
+        column-count: 2;
+    }
+
+    .gallery-container-item-text {
+        font-size: 0.5rem;
+    }
+}

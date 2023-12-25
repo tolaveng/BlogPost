@@ -13,7 +13,7 @@
     
     @foreach(var file in files)
     {
-        <div class="gallery-container-item" @key="file.FileName">
+        <div class="gallery-container-item" @key="file.FileName" @onclick="@(() => ShowPreviewModal(file))" >
             @if (file.IsImage && !string.IsNullOrWhiteSpace(file.FileUri)) {
                 <img src="@file.FileUri" title="@file.Name" class="gallery-container-item-image" />
                 <div class="gallery-container-item-text">
@@ -22,7 +22,7 @@
             } else {
                 <div>@file.Name</div>
             }
-            <button class="btn-delete" title="Delete" @onclick="@(() => ConfirmDelete(file.FileName))">
+            <button class="btn-delete" title="Delete" @onclick="() => ConfirmDelete(file.FileName)" @onclick:stopPropagation="true">
                 <i class="ri-delete-bin-2-line"></i>
             </button>
         </div>
@@ -42,6 +42,25 @@
 </div>
 
 <FileUploadModal @ref="fileUploadModal" Title="Upload Files" OnUploadCompleted="@OnUploadCompleted"/>
+
+<TModal Title="@previewFile.Name" @ref="previewModal" Size="TModal.ModalSize.xLarge">
+    <ChildContent>
+        @if (previewFile.IsImage)
+        {
+            <img src="@previewFile.FileUri" style="width: 100%; height: auto" title="@previewFile.FileName" />
+        } else
+        {
+            <span>Cannot preview file. <a href="@previewFile.FileUri" target="_blank">Click here</a> to download</span>
+        }
+    </ChildContent>
+    <Description>
+        <button class="btn btn-danger" @onclick="() => ConfirmDelete(previewFile.FileName)">Delete</button>
+    </Description>
+    <Buttons>
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+    </Buttons>
+</TModal>
+
 
 <TModal Title="Delete" @ref="deleteModal" Size="TModal.ModalSize.medium">
     <ChildContent>
@@ -64,6 +83,10 @@
     private bool isLoading;
 
     private FileUploadModal fileUploadModal;
+
+    private TModal previewModal;
+    private FileUploadResponse previewFile = new FileUploadResponse();
+
     private TModal deleteModal;
     private string toDeleteFileName = "";
     private bool isDeleting;
@@ -107,6 +130,8 @@
     {
         if (isDeleting) return;
 
+        await previewModal.Close();
+
         isDeleting = true;
         var file = files.SingleOrDefault(x => x.FileName.Equals(toDeleteFileName, StringComparison.InvariantCultureIgnoreCase));
         if (file != null)
@@ -127,5 +152,11 @@
     {
         var removeDuplicatedFiles = results.Where(x => !files.Any(f => f.FileName.Equals(x.FileName)));
         files.AddRange(removeDuplicatedFiles);
+    }
+
+    private async Task ShowPreviewModal(FileUploadResponse file)
+    {
+        previewFile = file;
+        await previewModal.Show();
     }
 }

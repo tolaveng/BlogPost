@@ -6,9 +6,14 @@
         },
         menubar: 'edit insert view format custom',
         toolbar: 'undo redo | styles | bold italic | alignleft aligncenter alignright alignjustify | outdent indent | code | fullscreen | fileGalleryButton',
-        plugins: 'link image table fullscreen code',
+        plugins: 'link image table fullscreen code paste',
         contextmenu: 'link image table',
         height: 300,
+        paste_block_drop: false, //not work
+        paste_data_images: false, // block paste and drag drop
+        automatic_uploads: false,
+        images_upload_handler: handleEditorUpload, // handle file upload
+        images_upload_credentials: true,
         setup: (editor) => {
             if (openGallery) {
                 editor.ui.registry.addMenuItem('fileGallery', {
@@ -45,6 +50,15 @@
             });
         }
     });
+
+    function handleEditorUpload(blobInfo, success, failure, progress) {
+        console.log('blobInfo', blobInfo);
+        failure("Upload file inside editor doesn't support.");
+        //dotNetRef.invokeMethodAsync('UploadHandler', blobInfo.base64(), blobInfo.filename())
+        //    .then((data) => {
+        //        success(data);
+        //    });
+    }
 
     return {
         insertImage: (instanceId, imageUrl) => {

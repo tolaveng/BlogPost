@@ -14,8 +14,8 @@
     @foreach(var file in files)
     {
         <div class="gallery-container-item" @key="file.FileName" @onclick="@(() => ShowPreviewModal(file))" >
-            @if (file.IsImage && !string.IsNullOrWhiteSpace(file.FileUri)) {
-                <img src="@file.FileUri" title="@file.Name" class="gallery-container-item-image" />
+            @if (file.IsImage) {
+                <img src="@(!string.IsNullOrWhiteSpace(file.ThumnailUri) ? file.ThumnailUri : file.FileUri)" title="@file.Name" class="gallery-container-item-image" />
                 <div class="gallery-container-item-text">
                     @file.Name
                 </div>

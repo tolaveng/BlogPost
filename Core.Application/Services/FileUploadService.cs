@@ -159,10 +159,15 @@ namespace Core.Application.Services
                     {
                         var name = blogItem.Metadata.TryGetValue("Name", out var nameValue) ? nameValue : blogItem.Name;
                         var contentType = blogItem.Properties.ContentType;
-                        var fileUri = blogItem.Metadata.TryGetValue("SasUri", out var sasUri) 
+                        var fileUri = blogItem.Metadata.TryGetValue("SasUri", out var sasUri)
                             ? $"{baseUrl}/{blogItem.Name}?{sasUri}"
                             : AzureUtil.GenerateSasUrl(containerClient, blogItem.Name, true);
                         var response = new FileUploadResponse(name, blogItem.Name, fileUri);
+
+                        if (blogItem.Metadata.TryGetValue("thumnailUri", out var thumnailUri))
+                        {
+                            response.ThumnailUri = thumnailUri;
+                        }
                         response.FileContentType = contentType;
                         results.Add(response);
                     }

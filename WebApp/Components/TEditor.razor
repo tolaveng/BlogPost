@@ -12,10 +12,16 @@
 @code {
 
     private IJSObjectReference JsModule;
+    private IJSObjectReference editorJs;
 
-    [Parameter] public string Value { get; set; } = String.Empty;
-    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+    [Parameter]
+    public string Value { get; set; } = String.Empty;
 
+    [Parameter]
+    public EventCallback<string> ValueChanged { get; set; }
+
+    [Parameter]
+    public EventCallback OpenGallery { get; set; }
 
     private string instanceId = $"tEditor_{Guid.NewGuid().ToString().Replace("-", "")}";
 
@@ -30,8 +36,14 @@
         await base.OnAfterRenderAsync(firstRender);
         if (firstRender)
         {
-           JsModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "/Components/TEditor.razor.js");
-           await JsModule.InvokeVoidAsync("TEditor_Init", DotNetObjectReference.Create(this), instanceId);   
+            JsModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "/Components/TEditor.razor.js");
+            if (OpenGallery.HasDelegate)
+            {
+                editorJs = await JsModule.InvokeAsync<IJSObjectReference>("TEditor_Init", DotNetObjectReference.Create(this), instanceId, "OpenGalleryJs");
+            } else
+            {
+                editorJs = await JsModule.InvokeAsync<IJSObjectReference>("TEditor_Init", DotNetObjectReference.Create(this), instanceId);
+            }
         }
     }
 
@@ -57,5 +69,26 @@
     {
         Regex regex = new Regex(@"<script[^>]*>[\s\S]*?</script>", RegexOptions.IgnoreCase);
         return regex.Replace(input, "");
+    }
+
+    // Open image gallery from Tiny Editor
+    [JSInvokable("OpenGalleryJs")]
+    public async Task OpenGalleryJs()
+    {
+        if (OpenGallery.HasDelegate)
+            await OpenGallery.InvokeAsync();
+    }
+
+    // Insert image to Tiny Editor
+    public async Task InsertImage(string imageUrl)
+    {
+        if (editorJs == null) return;
+        try
+        {
+            await editorJs.InvokeVoidAsync("insertImage", instanceId, imageUrl);
+        } catch (Exception)
+        {
+            // ignored
+        }
     }
 }

@@ -2,6 +2,7 @@
 @using Core.Application.Utils
 @using MongoDB.Bson
 @using WebApp.Pages.Files
+@using static WebApp.Pages.Files.FileGallery
 
 <PageTitle>@pageTitle</PageTitle>
 
@@ -29,11 +30,11 @@
             </div>
             <div class="mb-3">
                 <label class="form-label">Content</label>
-                <TEditor @bind-Value="@post.Content" />
+                <TEditor @ref="contentEditor" @bind-Value="@post.Content" OpenGallery="() => OpenGallery(SelectImageMode.contentImage)" />
             </div>
             <div class="mb-3">
                 <label class="form-label">Summary</label>
-                <TEditor @bind-Value="@post.Summary" />
+                <TEditor @ref="summaryEditor" @bind-Value="@post.Summary"  OpenGallery="() => OpenGallery(SelectImageMode.summaryImage)" />
             </div>
         </div>
         <div class="col-md-4">
@@ -126,16 +127,23 @@
     [Parameter]
     public string postId { get; set; }
 
-    string pageTitle = "";
-    bool isEdit = false;
-    string tags = "";
-    PostDto post = new PostDto();
+    private TEditor contentEditor;
+    private TEditor summaryEditor;
 
-    bool isSubmitting;
-    string errorMessage;
+    private string pageTitle = "";
+    private bool isEdit = false;
+    private string tags = "";
+    private PostDto post = new PostDto();
+
+    private bool isSubmitting;
+    private string errorMessage;
 
     private TModal galleryModal;
+
+    private SelectImageMode selectImageMode;
+
     private string featureImageUrl = "";
+
 
     protected override async Task OnInitializedAsync()
     {
@@ -218,12 +226,35 @@
 
     private async Task SelectFeatureImage()
     {
+        selectImageMode = SelectImageMode.featureImage;
         await galleryModal.Show();
     }
 
-    private async Task OnFileSelected(string fileUri)
+    private async Task OnFileSelected(FileGallerySelectEventArgs args)
     {
-        featureImageUrl = fileUri;
+        if (!args.isImage) return; // Not support for now
+
+        if (selectImageMode == SelectImageMode.featureImage)
+        {
+            featureImageUrl = args.fileUrl;
+        } else if (selectImageMode == SelectImageMode.contentImage)
+        {
+            await contentEditor.InsertImage(args.fileUrl);
+        } else {
+           await summaryEditor.InsertImage(args.fileUrl);
+        }
         await galleryModal.Close();
+    }
+
+    private async Task OpenGallery(SelectImageMode mode)
+    {
+        selectImageMode = mode;
+        await galleryModal.Show();
+    }
+
+
+    private enum SelectImageMode
+    {
+        featureImage, contentImage, summaryImage
     }
 }

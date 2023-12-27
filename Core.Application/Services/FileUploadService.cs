@@ -198,6 +198,29 @@ namespace Core.Application.Services
             {
                 await CreateContainer();
                 var blobClient = containerClient.GetBlobClient(fileName);
+                // try delete thumbnail
+                try
+                {
+                    var metaData = blobClient.GetProperties().Value.Metadata;
+                    if (metaData.TryGetValue("thumbnailUrl", out var thumbnailUrl))
+                    {
+                        if (!string.IsNullOrWhiteSpace(thumbnailUrl))
+                        {
+                            var thumbnailContainerName = containerClient.Name + "-thumbnail";
+                            var thumbnailUri = new Uri(thumbnailUrl);
+                            var thumbnailName = thumbnailUri.Segments.Last().Trim('/');
+                            var thumbnailContainer = new BlobContainerClient(setting.ConnectionString, thumbnailContainerName);
+                            if (thumbnailContainer.Exists())
+                            {
+                                var thumbnailBlog = thumbnailContainer.GetBlobClient(thumbnailName);
+                                await thumbnailBlog.DeleteIfExistsAsync();
+                            }
+                        }
+                    }
+                } catch (Exception)
+                {
+                    // ignored
+                }
                 await blobClient.DeleteIfExistsAsync();
                 return true;
             } catch (Exception)

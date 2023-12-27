@@ -15,7 +15,7 @@
     {
         <div class="gallery-container-item" @key="file.FileName" @onclick="@(() => ShowPreviewModal(file))" >
             @if (file.IsImage) {
-                <img src="@(!string.IsNullOrWhiteSpace(file.ThumnailUri) ? file.ThumnailUri : file.FileUri)" title="@file.Name" class="gallery-container-item-image" />
+                <img src="@(!string.IsNullOrWhiteSpace(file.ThumbnailUrl) ? file.ThumbnailUrl : file.FileUri)" title="@file.Name" class="gallery-container-item-image" />
                 <div class="gallery-container-item-text">
                     @file.Name
                 </div>

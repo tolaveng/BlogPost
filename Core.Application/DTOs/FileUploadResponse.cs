@@ -11,7 +11,7 @@
 
         public string FileUri { get; set; } = string.Empty;
 
-        public string ThumnailUri { get; set; } = string.Empty;
+        public string ThumbnailUrl { get; set; } = string.Empty;
 
         public string FileContentType { get; set; } = string.Empty;
 

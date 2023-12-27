@@ -118,19 +118,27 @@ namespace Core.Application.Services
                     Metadata = new Dictionary<string, string>() {
                         {"Name", request.Name},
                     },
-            };
+                };
 
                 // upload
                 await blobClient.UploadAsync(request.Stream, uploadOption, ct);
 
-                
+                // Sas url
+                var fileUri = AzureUtil.GenerateSasUriForBlob(blobClient, null, true);
+                var SasUri = fileUri.ToString().Split("?")[1];
+                var metadata = new Dictionary<string, string>() {
+                        {"Name", request.Name},
+                        {"SasUri", SasUri},
+                    };
+                blobClient.SetMetadata(metadata);
+
                 if (ct.IsCancellationRequested)
                 {
                     await blobClient.DeleteIfExistsAsync();
                 }
 
                 OnUploadProgress(request.FileName, 100);
-                var fileUri = AzureUtil.GenerateSasUriForBlob(blobClient, null, true);
+                
                 return FileUploadResponse.Succeed(request.Name, blobClient.Name, fileUri.ToString(), request.ContentType);
 
             } catch (Exception ex)
@@ -164,9 +172,9 @@ namespace Core.Application.Services
                             : AzureUtil.GenerateSasUrl(containerClient, blogItem.Name, true);
                         var response = new FileUploadResponse(name, blogItem.Name, fileUri);
 
-                        if (blogItem.Metadata.TryGetValue("thumnailUri", out var thumnailUri))
+                        if (blogItem.Metadata.TryGetValue("thumbnailUrl", out var thumbnailUrl))
                         {
-                            response.ThumnailUri = thumnailUri;
+                            response.ThumbnailUrl = thumbnailUrl;
                         }
                         response.FileContentType = contentType;
                         results.Add(response);

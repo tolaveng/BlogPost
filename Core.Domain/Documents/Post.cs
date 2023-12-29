@@ -21,5 +21,7 @@ namespace Core.Domain.Documents
         public bool IsPublished { get; set; }
         public bool IsArhived { get; set; }
         public string FeatureImageUrl { get; set; } = string.Empty;
+
+        public long ViewCount { get; set; }
     }
 }

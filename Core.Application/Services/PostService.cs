@@ -66,13 +66,17 @@ namespace Core.Application.Services
             {
                 var post = await respository.FindByIdAsync(postId);
                 if (post == null) return null;
+                
+                post.ViewCount += 1;
+                await respository.ReplaceOneAsync(post);
+
                 return mapper.Map<PostDto>(post);
             } catch (Exception) { 
                 return null;
             }
         }
 
-        public async Task<Pagination<PostDto>> GetPosts(Pageable pagable, string? searchText)
+        public async Task<Pagination<PostDto>> GetPosts(Pageable pagable, string? searchText = "")
         {
             try
             {
@@ -98,8 +102,15 @@ namespace Core.Application.Services
                     TotalPages = totalPages,
                     Count = count,
                 };
-            } catch (Exception) { }
-            return null;
+            } catch (Exception) {
+                return new Pagination<PostDto>()
+                {
+                    Items = Enumerable.Empty<PostDto>(),
+                    HasNext = false,
+                    TotalPages = 0,
+                    Count = 0,
+                };
+            }
         }
 
         public async Task<bool> UpdatePost(PostDto postDto)

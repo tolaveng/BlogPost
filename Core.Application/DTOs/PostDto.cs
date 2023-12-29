@@ -11,9 +11,13 @@ namespace Core.Application.DTOs
         [JsonConverter(typeof(ObjectIdConverter))]
         public ObjectId Id { get; set; }
 
+        public string _Id => Id != null && Id != ObjectId.Empty ? Id.ToString() : string.Empty;
+
         [Required(ErrorMessage = "UserId is empty")]
         [JsonConverter(typeof(ObjectIdConverter))]
         public ObjectId UserId { get; set; } = ObjectId.Empty;
+
+        public string _UserId => UserId != null && UserId != ObjectId.Empty ? UserId.ToString() : string.Empty;
 
         [Required(ErrorMessage = "PostType is empty")]
         public PostType PostType { get; set; } = PostType.Post;
@@ -39,5 +43,7 @@ namespace Core.Application.DTOs
         public bool IsPublished { get; set; }
         public bool IsArhived { get; set; }
         public string FeatureImageUrl { get; set; } = string.Empty;
+
+        public long ViewCount { get; set; }
     }
 }

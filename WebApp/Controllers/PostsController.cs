@@ -18,9 +18,10 @@ namespace WebApp.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<PostDto[]>> Get(int pageNo, int? pageSize = 50)
+        public async Task<ActionResult<Pagination<PostDto>>> Get(int pageNo, int? pageSize = 50)
         {
             var pageable = new Pageable(pageNo, pageSize.HasValue ? pageSize.Value : 50);
+            pageable.SortBy = "PublishedDateTime";
             var posts = await postService.GetPosts(pageable);
             return Ok(posts);
         }

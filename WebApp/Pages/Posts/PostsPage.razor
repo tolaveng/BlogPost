@@ -138,6 +138,7 @@
         StateHasChanged();
 
         var pageable = new Pageable(pageNo, pageSize);
+        pageable.SortBy = "PublishedDateTime";
         var pagination = await postService.GetPosts(pageable, searchText);
         posts = pagination.Items.ToList();
         pageCount = pagination.TotalPages;

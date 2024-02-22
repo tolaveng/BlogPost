@@ -91,6 +91,11 @@ namespace Core.Application.Services
                 var count = queryable.Count();
                 var totalPages = (int)Math.Ceiling((decimal)count / pagable.PageSize);
 
+                if (pagable.SortBy != null && pagable.SortBy == "PublishedDateTime")
+                {
+                    queryable = queryable.OrderByDescending(x => x.PublishedDateTime);
+                }
+
                 var posts = queryable.Skip(pagable.Skip).Take(pagable.PageSize).ToList();
                 var items = mapper.Map<List<PostDto>>(posts);
                 

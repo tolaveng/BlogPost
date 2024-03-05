@@ -118,6 +118,53 @@ namespace Core.Application.Services
             }
         }
 
+        public async Task<Pagination<PostDto>> GetPostsByTag(string tag, Pageable pagable, string? searchText = "")
+        {
+            try
+            {
+                tag = tag.ToUpper();
+                var queryable = respository.AsQueryable()
+                    .Where(x => x.Tags != null && x.Tags.Any(t => t.ToUpper() == tag));
+
+                if (!string.IsNullOrWhiteSpace(searchText))
+                {
+                    queryable = queryable.Where(x => x.Title.Contains(searchText)
+                    || x.Summary.Contains(searchText)
+                    || x.Content.Contains(searchText)
+                    );
+                }
+                var count = queryable.Count();
+                var totalPages = (int)Math.Ceiling((decimal)count / pagable.PageSize);
+
+                if (pagable.SortBy != null && pagable.SortBy == "PublishedDateTime")
+                {
+                    queryable = queryable.OrderByDescending(x => x.PublishedDateTime);
+                }
+
+                var posts = queryable.Skip(pagable.Skip).Take(pagable.PageSize).ToList();
+                var items = mapper.Map<List<PostDto>>(posts);
+
+
+                return new Pagination<PostDto>()
+                {
+                    Items = items,
+                    HasNext = pagable.PageNo < totalPages,
+                    TotalPages = totalPages,
+                    Count = count,
+                };
+            }
+            catch (Exception)
+            {
+                return new Pagination<PostDto>()
+                {
+                    Items = Enumerable.Empty<PostDto>(),
+                    HasNext = false,
+                    TotalPages = 0,
+                    Count = 0,
+                };
+            }
+        }
+
         public async Task<bool> UpdatePost(PostDto postDto)
         {
             try

@@ -175,7 +175,7 @@
     {
         isSubmitting = true;
         errorMessage = "";
-
+        post.Path = post.Path.Trim().ToLower().Replace(" ", "-");
         post.Tags = string.IsNullOrWhiteSpace(tags) ? Array.Empty<string>() : tags.RemoveWhiteSpace().Split(",");
         post.FeatureImageUrl = featureImageUrl;
         if (string.IsNullOrWhiteSpace(postId))

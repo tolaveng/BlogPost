@@ -26,6 +26,17 @@ namespace WebApp.Controllers
             return Ok(posts);
         }
 
+        [Route("tag/{tag}")]
+        [HttpGet]
+        public async Task<ActionResult<Pagination<PostDto>>> GetByTag(string tag, int pageNo, int? pageSize = 50)
+        {
+            var pageable = new Pageable(pageNo, pageSize.HasValue ? pageSize.Value : 50);
+            pageable.SortBy = "PublishedDateTime";
+            var posts = await postService.GetPostsByTag(tag, pageable);
+            return Ok(posts);
+        }
+
+
         [Route("{id}")]
         [HttpGet]
         public async Task<ActionResult<PostDto>> GetById(string id)

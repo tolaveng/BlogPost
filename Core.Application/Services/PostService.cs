@@ -76,6 +76,24 @@ namespace Core.Application.Services
             }
         }
 
+        public async Task<PostDto> GetByPath(string path)
+        {
+            try
+            {
+                var post = await respository.FindOneAsync(x => x.Path.ToLower() == path.ToLower());
+                if (post == null) return null;
+
+                post.ViewCount += 1;
+                await respository.ReplaceOneAsync(post);
+
+                return mapper.Map<PostDto>(post);
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
         public async Task<Pagination<PostDto>> GetPosts(Pageable pagable, string? searchText = "")
         {
             try

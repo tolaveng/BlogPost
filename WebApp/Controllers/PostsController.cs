@@ -37,7 +37,7 @@ namespace WebApp.Controllers
         }
 
 
-        [Route("{id}")]
+        [Route("id/{id}")]
         [HttpGet]
         public async Task<ActionResult<PostDto>> GetById(string id)
         {
@@ -49,6 +49,20 @@ namespace WebApp.Controllers
                 return Ok(post);
             }
             return NotFound($"{id} not found.");
+        }
+
+        [Route("{path}")]
+        [HttpGet]
+        public async Task<ActionResult<PostDto>> GetByPath(string path)
+        {
+            if (path == null || path.Trim() == "") return NotFound();
+
+            var post = await postService.GetByPath(path);
+            if (post != null)
+            {
+                return Ok(post);
+            }
+            return NotFound($"{path} not found.");
         }
     }
 }

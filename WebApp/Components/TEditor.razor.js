@@ -1,6 +1,7 @@
 ﻿export function TEditor_Init(dotNetRef, instanceId, openGallery) {
     tinymce.init({
         selector: '#' + instanceId, //multiple instances
+        content_css: "/css/tinymce-content.css",
         menu: {
             custom: { title: 'File Gallery', items: 'fileGallery'}
         },

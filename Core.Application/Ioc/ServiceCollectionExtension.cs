@@ -15,11 +15,13 @@ namespace Core.Application.Ioc
             services.AddAutoMapper(typeof(AutoMapperProfile));
 
             services.Configure<AzureStorageSetting>(configuration.GetSection("AzureStorage"));
+            services.Configure<CloudinarySetting>(configuration.GetSection("Cloudinary"));
 
             services.AddScoped<ISettingService, SettingService>();
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IPostService, PostService>();
-            services.AddScoped<IFileUploadService, FileUploadService>();
+            //services.AddScoped<IFileUploadService, FileUploadService>();
+            services.AddScoped<IFileUploadService, CloudinaryFileUploadService>();
         }
     }
 }
